@@ -8,8 +8,25 @@ def main():
     # Uncomment this to pass the first stage
 
     server_socket = socket.create_server(("localhost", 6379), reuse_port=True)
-    connection, _ = server_socket.accept() # wait for client
-    connection.sendall(b"+PONG\r\n")
+    print("Server created")
+    server_socket.listen()
+    print("Server listening on 127.0.0.1:6379")
+    while True:
+        connection, address = server_socket.accept()  # wait for client
+        print(f"Connected by {address}")
+        connection.sendall(b"+PONG\r\n")
+        with connection:
+            while True:
+                message = connection.recv(1024)
+                print(f"Received: {message}")
+                try:
+                    connection.sendall(b"+PONG\r\n")
+                except BrokenPipeError as e:
+                    print('Connection closed by user')
+                    break
+    print("Server closed")
+
+
 
 
 if __name__ == "__main__":

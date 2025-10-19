@@ -12,19 +12,16 @@ def main():
     print("Server created")
     server_socket.listen()
     print("Server listening on 127.0.0.1:6379")
+    current_threads = []
+    counter = 0
     while True:
         connection, address = server_socket.accept()  # wait for client
         print(f"Connected by {address}")
-        current_threads = []
-        t = threading.Thread(target=run, args=(connection, address), daemon=True)
+        t = threading.Thread(target=run, args=(connection, address), daemon=True, name=f"Thread {counter}")
         t.start()
         current_threads.append(t)
-        print(f"Thread {len(current_threads)} started")
-
-        # for thread in range(len(current_threads)):
-        #     current_threads[thread].join()
-        #     print(f"Thread {thread} joined")
-        #     print(f"Thread {i} finished")
+        counter += 1
+        print(f"{t.name} started", end="\n\n")
 
 
 def run(connection, address):
@@ -34,14 +31,15 @@ def run(connection, address):
             message = message.decode("utf-8")
             message.strip()
             if message == "":
-                print("Connection closed by client")
+                print(f"Connection closed by client on address {address}")
                 break
-            print(f"Received: {message} From: {address}\n")
+            print("---------")
+            print(f"Received: {message}From: {address}\n")
             for _ in range(message.count("PING")):
                 response = b"+PONG\r\n"
                 try:
                     connection.sendall(response)
-                    print(f'Sent:{response}')
+                    print(f'Sent:{response.decode("utf-8")}')
                     print("---------")
                 except BrokenPipeError:
                     print('Connection closed by user')

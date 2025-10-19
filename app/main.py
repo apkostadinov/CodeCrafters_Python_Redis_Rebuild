@@ -12,39 +12,40 @@ def main():
     print("Server created")
     server_socket.listen()
     print("Server listening on 127.0.0.1:6379")
-
-    current_threads = []
-    for i in range(5):
-        t = threading.Thread(target=run, args=(server_socket, ), daemon=True)
-        t.start()
-        print(f"Thread {i} started")
-        current_threads.append(t)
-
-    for thread in range(len(current_threads)):
-        current_threads[thread].join()
-        print(f"Thread {thread} joined")
-        print(f"Thread {i} finished")
-
-
-def run(server_socket):
     while True:
         connection, address = server_socket.accept()  # wait for client
         print(f"Connected by {address}")
-        # connection.sendall(b"+PONG\r\n")
-        with connection:
-            while True:
-                message = connection.recv(1024)
-                message = message.decode("utf-8")
-                if message == "":
-                    print("Connection closed by client")
+        current_threads = []
+        t = threading.Thread(target=run, args=(connection, address), daemon=True)
+        t.start()
+        current_threads.append(t)
+        print(f"Thread {len(current_threads)} started")
+
+        # for thread in range(len(current_threads)):
+        #     current_threads[thread].join()
+        #     print(f"Thread {thread} joined")
+        #     print(f"Thread {i} finished")
+
+
+def run(connection, address):
+    with connection:
+        while True:
+            message = connection.recv(1024)
+            message = message.decode("utf-8")
+            message.strip()
+            if message == "":
+                print("Connection closed by client")
+                break
+            print(f"Received: {message} From: {address}\n")
+            for _ in range(message.count("PING")):
+                response = b"+PONG\r\n"
+                try:
+                    connection.sendall(response)
+                    print(f'Sent:{response}')
+                    print("---------")
+                except BrokenPipeError:
+                    print('Connection closed by user')
                     break
-                print(f"Received: {message}")
-                for _ in range(message.count("PING")):
-                    try:
-                        connection.sendall(b"+PONG\r\n")
-                    except BrokenPipeError:
-                        print('Connection closed by user')
-                        break
 
 
 

@@ -1,6 +1,5 @@
 import socket  # noqa: F401
 
-
 def main():
     # You can use print statements as follows for debugging, they'll be visible when running tests.
     print("Logs from your program will appear here!")
@@ -14,17 +13,21 @@ def main():
     while True:
         connection, address = server_socket.accept()  # wait for client
         print(f"Connected by {address}")
-        connection.sendall(b"+PONG\r\n")
+        # connection.sendall(b"+PONG\r\n")
         with connection:
             while True:
                 message = connection.recv(1024)
-                print(f"Received: {message}")
-                try:
-                    connection.sendall(b"+PONG\r\n")
-                except BrokenPipeError as e:
-                    print('Connection closed by user')
+                message = message.decode("utf-8")
+                if message == "":
+                    print("Connection closed by client")
                     break
-    print("Server closed")
+                print(f"Received: {message}")
+                for _ in range(message.count("PING")):
+                    try:
+                        connection.sendall(b"+PONG\r\n")
+                    except BrokenPipeError:
+                        print('Connection closed by user')
+                        break
 
 
 

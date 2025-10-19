@@ -19,12 +19,12 @@ def main():
             while True:
                 message = connection.recv(1024)
                 print(f"Received: {message}")
-                try:
-                    connection.sendall(b"+PONG\r\n")
-                except BrokenPipeError as e:
-                    print('Connection closed by user')
-                    break
-    print("Server closed")
+                for _ in range(message.count("PING")):
+                    try:
+                        connection.sendall(b"+PONG\r\n")
+                    except BrokenPipeError:
+                        print('Connection closed by user')
+                        break
 
 
 

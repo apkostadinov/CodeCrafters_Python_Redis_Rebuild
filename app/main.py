@@ -81,14 +81,11 @@ async def handle_client(reader, writer):
                     writer.write(response)
                     await writer.drain()
                     print(f'Sent: {response.decode("utf-8")}')
-            if 'ECHO' in message:
-                message = message.split(' ')
-                for i in range(len(message)):
-                    if message[i].upper() == 'ECHO':
-                        response = resp_bulk_string(message[i+1])
-                        writer.write(response)
-                        await writer.drain()
-                        print(f'Sent: {response.decode("utf-8")}')
+            if message.startswith("ECHO "):
+                # Extract the message to echo
+                to_echo = message[5:]  # remove "ECHO " prefix
+                writer.write(resp_bulk_string(to_echo))
+                await writer.drain()
 
             print('----------------')
 

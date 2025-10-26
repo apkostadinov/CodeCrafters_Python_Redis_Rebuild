@@ -1,4 +1,5 @@
 import socket
+import app.parser as parser
 
 HOST = '127.0.0.1'  # server address
 PORT = 6379         # server port
@@ -14,7 +15,7 @@ def send_redis_command(command: str):
 
         # Receive response
         data = sock.recv(1024)
-        print(f"Received: {data.decode('utf-8')}")
+        print(f"Received: {parser.parser_first(data)}")
 
 if __name__ == "__main__":
     send_redis_command("PING")

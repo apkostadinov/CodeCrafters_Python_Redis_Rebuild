@@ -74,7 +74,8 @@ async def handle_client(reader, writer):
                 continue  # keep connection alive
 
             print('----------------')
-            print(f'Received: {message} from {address}')
+            print(f'Received: {data} from {address}\n'
+                  f'Decoded: {message}')
             if "PING" in message:
                 for _ in range(message.count("PING")):
                     response = b'+PONG\r\n'
@@ -83,7 +84,7 @@ async def handle_client(reader, writer):
                     print(f'Sent: {response.decode("utf-8")}')
             if "ECHO" in message:
                 # Extract the message to echo
-                for i in range(message):
+                for i in range(len(message)):
                     if message[i].upper() == "ECHO" and message[i+1]:
                         writer.write(resp_bulk_string(to_echo))
                         await writer.drain()

@@ -1,6 +1,7 @@
 import socket  # noqa: F401
 import threading
 import asyncio
+from datetime import datetime, time, timedelta
 from . import parser
 
 def resp_bulk_string(message: str) -> bytes:
@@ -53,23 +54,35 @@ async def handle_client(reader, writer):
 
             if "SET" in message:
                 # Extract the key and value to set
-                working_dictionary[message[1]] = message[2]
+                working_dict[message[1]] = message[2]
+                if len(message)>3:
+                    add_time = None
+                    if message[3] == "EX":
+                        add_time = datetime.now() + timedelta(seconds=int(message[4]))
+                    elif message[3] == "PX":
+                        add_time = datetime.now() + timedelta(milliseconds=int(message[4]))
+                    if add_time:
+                        timing_dict[message[1]] = add_time
+                    else:
+                        raise RespError("Invalid time format for SET command")
                 response = b'+OK\r\n'
                 writer.write(response)
                 await writer.drain()
-                print(f'Key: {message[1]} '
-                      f'Value: {message[2]}'
-                      f'SET'
+                print(f'SET - Key: {message[1]} Value: {message[2]}\n'
                       f'Sent: {response}')
 
             if "GET" in message:
+                value = b'$-1\r\n'
                 key = message[1]
-                if key in working_dictionary.keys():
-                    value = working_dictionary[key]
+                if key in working_dict.keys() and key in timing_dict.keys():
+                    if timing_dict[key] > datetime.now():
+                        value = working_dict[key]
+                        print(f'Value found: {value}')
+                        value = resp_bulk_string(value)
+                elif key in working_dict.keys():
+                    value = working_dict[key]
                     print(f'Value found: {value}')
                     value = resp_bulk_string(value)
-                else:
-                    value = '$-1\r\n'.encode('utf-8')
                 writer.write(value)
                 await writer.drain()
 
@@ -92,6 +105,7 @@ async def main():
 
 
 if __name__ == "__main__":
-    working_dictionary = dict()
+    working_dict = dict()
+    timing_dict = dict()
     asyncio.run(main())
     #main()

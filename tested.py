@@ -21,6 +21,7 @@ def send_redis_command(command: str):
 
 
 if __name__ == "__main__":
+    print(parser.parser_first(b'*3\r\n$3\r\nSET\r\n$9\r\nblueberry\r\n$9\r\nraspberry\r\n'))
     send_redis_command("PING")
     send_redis_command("PING")
     send_redis_command("ECHO hello")

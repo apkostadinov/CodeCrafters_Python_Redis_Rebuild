@@ -16,7 +16,7 @@ def send_redis_command(command: str):
         # Receive response
         data = sock.recv(1024)
         print(f"Received: "
-              f"{data}"
+              f"{data} -> "
               f"{parser.parser_first(data)}")
 
 
@@ -24,3 +24,6 @@ if __name__ == "__main__":
     send_redis_command("PING")
     send_redis_command("PING")
     send_redis_command("ECHO hello")
+    send_redis_command("SET fruit apple")
+    send_redis_command("GET fruit")
+    send_redis_command("GET vegetable")

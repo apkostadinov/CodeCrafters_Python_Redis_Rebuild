@@ -1,6 +1,7 @@
 import socket  # noqa: F401
 import threading
 import asyncio
+from datetime import datetime, time, timedelta
 from . import parser
 
 def resp_bulk_string(message: str) -> bytes:
@@ -53,7 +54,13 @@ async def handle_client(reader, writer):
 
             if "SET" in message:
                 # Extract the key and value to set
-                working_dictionary[message[1]] = message[2]
+                working_dict[message[1]] = message[2]
+                if message[3] and (message[3] == "EX" or message[3] == "PX"):
+                    if message[3] == "EX":
+                        add_time = datetime.now() + timedelta(seconds=int(message[4]))
+                    else:
+                        add_time = datetime.now() + timedelta(milliseconds=int(message[4]))
+                    timing_dict[message[1]] = add_time
                 response = b'+OK\r\n'
                 writer.write(response)
                 await writer.drain()
@@ -64,10 +71,11 @@ async def handle_client(reader, writer):
 
             if "GET" in message:
                 key = message[1]
-                if key in working_dictionary.keys():
-                    value = working_dictionary[key]
-                    print(f'Value found: {value}')
-                    value = resp_bulk_string(value)
+                if key in working_dict.keys() and key in timing_dict.keys():
+                    if timing_dict[key] > datetime.now():
+                        value = working_dict[key]
+                        print(f'Value found: {value}')
+                        value = resp_bulk_string(value)
                 else:
                     value = '$-1\r\n'.encode('utf-8')
                 writer.write(value)
@@ -92,6 +100,7 @@ async def main():
 
 
 if __name__ == "__main__":
-    working_dictionary = dict()
+    working_dict = dict()
+    timing_dict = dict()
     asyncio.run(main())
     #main()

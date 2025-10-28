@@ -48,8 +48,10 @@ def parse_bulk_string(buf, i):
     line,i = read_line(buf,i)
     length = int(line[1:])
 
-    if length == -1:
+    if length == -1 and len(buf) > 5:
         raise RespError("Incomplete frame: missing CRLF")
+    if length == -1:
+        return None
 
     end = i + length
     if end + 2 > len(str(buf)):
@@ -107,6 +109,7 @@ def parser(buf, i):
         return parse_boolean(buf, i)
     if t == b'_':
         return None
+
 
     raise RespError(f"Unsupported type byte: {t!r}")
 def parser_first(buf: bytes, i=0) -> Any:

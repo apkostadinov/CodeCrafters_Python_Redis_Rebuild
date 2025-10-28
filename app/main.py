@@ -3,53 +3,12 @@ import threading
 import asyncio
 from . import parser
 
-# def main():
-#     # You can use print statements as follows for debugging, they'll be visible when running tests.
-#     print("Logs from your program will appear here!")
-#
-#     # Uncomment this to pass the first stage
-#
-#     #server_socket = socket.create_server(("localhost", 6379), reuse_port=True)
-#     server_socket = socket.create_server(("localhost", 6379))
-#     print("Server created")
-#     server_socket.listen()
-#     print("Server listening on 127.0.0.1:6379")
-#     current_threads = []
-#     counter = 0
-#
-#     while True:
-#         connection, address = server_socket.accept()  # wait for client
-#         print(f"Connected by {address}")
-#         t = threading.Thread(target=connection_thread, args=(connection, address), daemon=True, name=f"Thread {counter}")
-#         t.start()
-#         current_threads = [t for t in current_threads if t.is_alive()]
-#         counter += 1
-#         print(f"{t.name} started ({len(current_threads)} active)\n")
-#
-# def connection_thread(connection, address):
-#     with connection:
-#         while True:
-#             raw_message = connection.recv(1024)
-#             if not raw_message:
-#                 print(f"Connection closed by client on address {address}")
-#                 break
-#             message = raw_message.decode("utf-8").strip()
-#             print("---------")
-#             print(f"Received: {message}\nFrom: {address}\n")
-#             for _ in range(message.count("PING")):
-#                 response = b"+PONG\r\n"
-#                 try:
-#                     connection.sendall(response)
-#                     print(f'Sent:{response.decode("utf-8")}')
-#                     print("---------")
-#                 except BrokenPipeError:
-#                     print('Connection closed by user')
-#                     break
-
 def resp_bulk_string(message: str) -> bytes:
     """Convert a string to RESP bulk string format."""
     return f"${len(message)}\r\n{message}\r\n".encode("utf-8")
 
+class RespError(Exception):
+    pass
 
 async def handle_client(reader, writer):
     address = writer.get_extra_info("peername")
@@ -76,18 +35,43 @@ async def handle_client(reader, writer):
             print('----------------')
             print(f'Received: {data} from {address}\n'
                   f'Decoded: {message}')
+
             if "PING" in message:
                 for _ in range(message.count("PING")):
                     response = b'+PONG\r\n'
                     writer.write(response)
                     await writer.drain()
                     print(f'Sent: {response.decode("utf-8")}')
+
             if "ECHO" in message:
                 # Extract the message to echo
                 for i in range(len(message)):
                     if message[i].upper() == "ECHO" and message[i+1]:
                         writer.write(resp_bulk_string(message[i+1]))
                         await writer.drain()
+                        print(f'Sent: {message[i+1].decode("utf-8")}')
+
+            if "SET" in message:
+                # Extract the key and value to set
+                working_dictionary[message[1]] = message[2]
+                response = b'+OK\r\n'
+                writer.write(response)
+                await writer.drain()
+                print(f'Key: {message[1]} '
+                      f'Value: {message[2]}'
+                      f'SET'
+                      f'Sent: {response}')
+
+            if "GET" in message:
+                key = message[1]
+                if key in working_dictionary.keys():
+                    value = working_dictionary[key]
+                    print(f'Value found: {value}')
+                    value = resp_bulk_string(value)
+                else:
+                    value = '$-1\r\n'.encode('utf-8')
+                writer.write(value)
+                await writer.drain()
 
             print('----------------')
 
@@ -108,5 +92,6 @@ async def main():
 
 
 if __name__ == "__main__":
+    working_dictionary = dict()
     asyncio.run(main())
     #main()

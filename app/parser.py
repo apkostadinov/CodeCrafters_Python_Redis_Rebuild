@@ -33,7 +33,6 @@ def read_line(buf: bytes, i: int) -> Tuple[bytes, int]:
 
 def parse_array(buf, i):
     line, i = read_line(buf, i)
-    print(line)
     rng = int(line[1:])
 
     values = []

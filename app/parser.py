@@ -121,6 +121,6 @@ def parser_first(buf: bytes, i=0) -> Any:
     return val
 
 print('parser version: 0.3, created 26.10.2025')
-# print(parser_first(b"$4\r\nPING\r\n"))
+# inovprint(parser_first(b"$4\r\nPING\r\n"))
 # print(parser_first(b'+OK\r\n'))
 # print(parser_first(b"*2\r\n$4\r\nPING\r\n$4\r\nPONG\r\n"))

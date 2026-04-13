@@ -120,6 +120,12 @@ def parser_first(buf: bytes, i=0) -> Any:
     # If you want to enforce complete consumption, you can check next_i == len(buf)
     return val
 
+def encode_integer(n: int):
+    if isinstance(n, int):
+        return f":{n}\r\n".encode("utf-8")
+    else:
+        raise ValueError("Passed value is not an integer.")
+
 print('parser version: 0.3, created 26.10.2025')
 # inovprint(parser_first(b"$4\r\nPING\r\n"))
 # print(parser_first(b'+OK\r\n'))

@@ -1,7 +1,7 @@
 import socket
 import app.parser as parser
 
-HOST = '127.0.0.1'  # server address
+HOST = 'localhost'  # server address
 PORT = 6379         # server port
 
 def send_redis_command(command: str):
@@ -28,3 +28,4 @@ if __name__ == "__main__":
     send_redis_command("SET fruit apple")
     send_redis_command("GET fruit")
     send_redis_command("GET vegetable")
+    send_redis_command('RPUSH list_key "element"')

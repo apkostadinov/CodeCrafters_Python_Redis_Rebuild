@@ -11,8 +11,6 @@ def resp_bulk_string(message: str) -> bytes:
 class RespError(Exception):
     pass
 
-
-
 async def handle_client(reader, writer):
     address = writer.get_extra_info("peername")
     print(f'Connected by {address}')
@@ -92,8 +90,14 @@ async def handle_client(reader, writer):
                 await writer.drain()
 
             if "RPUSH" in message:
-                #TODO
-                ...
+                message = message.split(" ")
+                key = message[1]
+                value = message[2]
+                if key in working_dict:
+                    working_dict[key].append(value)
+                else:
+                    working_dict[key] = [value]
+                writer.write(str(len(working_dict)).encode("utf-8"))
 
             print('----------------')
 

@@ -118,6 +118,12 @@ def parse_one(buf: bytes) -> Any:
     # If you want to enforce complete consumption, you can check next_i == len(buf)
     return val
 
+def encode_integer(n: int):
+    if isinstance(n, int):
+        return f":{n}\r\n".encode("utf-8")
+    else:
+        raise ValueError("Passed value is not an integer.")
+
 if __name__ == "__main__":
     # Demo cases:
     print(parse_one(b"+OK\r\n"))  # 'OK'
@@ -126,3 +132,4 @@ if __name__ == "__main__":
     print(parse_one(b"$4\r\nPING\r\n"))  # b'PING'
     arr = b"*3\r\n$4\r\nPING\r\n$4\r\nPONG\r\n$4\r\nPING\r\n"
     print(parse_one(arr))  # [b'PING', b'PONG', b'PING']
+    print(encode_integer(2))

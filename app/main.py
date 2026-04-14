@@ -102,9 +102,22 @@ async def handle_client(reader, writer):
 
             if message[0] == "LRANGE":
                 key = message[1]
-                start = message[2]
-                stop = message[3]
-                working_list =  working_dict[key]
+                try:
+                    start = int(message[2])
+                except ValueError:
+                    raise ValueError("Start index is not an integer")
+
+                try:
+                    stop = int(message[3])
+                except:
+                    raise ValueError("Stop index is not an integer")
+
+                try:
+                    working_list = working_dict[key]
+                except KeyError:
+                    writer.write(b"-Invalid Key\r\n")
+                    continue
+
                 if stop and stop >= len(working_list):
                     stop = len(working_list)
                 if not any([start >= len(working_list), start > stop]):

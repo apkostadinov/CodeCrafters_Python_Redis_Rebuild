@@ -90,7 +90,6 @@ async def handle_client(reader, writer):
                 await writer.drain()
 
             if "RPUSH" in message:
-                message = message.split(" ")
                 key = message[1]
                 value = message[2]
                 if key in working_dict:

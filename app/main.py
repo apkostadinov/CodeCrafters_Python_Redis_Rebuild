@@ -6,7 +6,10 @@ from . import parser
 
 def resp_bulk_string(message: str) -> bytes:
     """Convert a string to RESP bulk string format."""
-    return f"${len(message)}\r\n{message}\r\n".encode("utf-8")
+    if len(message) > 0:
+        return f"${len(message)}\r\n{message}\r\n".encode("utf-8")
+    else:
+        return f"_\r\n".encode("utf-8")
 
 class RespError(Exception):
     pass
@@ -50,7 +53,11 @@ async def handle_client(reader, writer):
                     if message[i].upper() == "ECHO" and message[i+1]:
                         writer.write(resp_bulk_string(message[i+1]))
                         await writer.drain()
-                        print(f'Sent: {message[i+1].decode("utf-8")}')
+                        print(f'Sent: {message[i+1]}')
+                    # if message[i+1] == '':
+                    #     writer.write(b"+''\r\n")
+                    #     await writer.drain()
+
 
             if "SET" in message:
                 # Extract the key and value to set
@@ -82,6 +89,7 @@ async def handle_client(reader, writer):
                     else:
                         working_dict.pop(key)
                         timing_dict.pop(key)
+                        print(f'Value not found')
                 elif key in working_dict.keys():
                     value = working_dict[key]
                     print(f'Value found: {value}')

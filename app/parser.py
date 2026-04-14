@@ -49,7 +49,7 @@ def parse_bulk_string(buf, i):
 
     if length == -1 and len(buf) > 5:
         raise RespError("Incomplete frame: missing CRLF")
-    if length == -1:
+    if length == -1 or length == 0:
         return None
 
     end = i + length

@@ -98,6 +98,23 @@ async def handle_client(reader, writer):
                 else:
                     working_dict[key] = list(message[2:])
                 writer.write(parser.encode_integer(len(working_dict[key])))
+                await writer.drain()
+
+            if message[0] == "LRANGE":
+                key = message[1]
+                start = message[2]
+                stop = message[3]
+                working_list =  working_dict[key]
+                if stop and stop >= len(working_list):
+                    stop = len(working_list)
+                if not any([start >= len(working_list), start > stop]):
+                    for i in range(start, stop + 1):
+                        writer.write(working_list[i])
+                        await writer.drain()
+                else:
+                    writer.write("")
+                    await writer.drain()
+                ...
 
             print('----------------')
 

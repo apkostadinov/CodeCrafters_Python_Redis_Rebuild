@@ -96,7 +96,7 @@ async def handle_client(reader, writer):
                     working_dict[key].append(value)
                 else:
                     working_dict[key] = [value]
-                writer.write(parser.encode_integer(len(working_dict)))
+                writer.write(parser.encode_integer(len(working_dict[key])))
 
             print('----------------')
 

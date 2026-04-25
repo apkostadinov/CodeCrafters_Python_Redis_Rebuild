@@ -6,10 +6,10 @@ from . import parser
 
 def resp_bulk_string(message: str) -> bytes:
     """Convert a string to RESP bulk string format."""
-    if len(message) > 0:
+    if len(message) >= 1:
         return f"${len(message)}\r\n{message}\r\n".encode("utf-8")
     else:
-        return f"_\r\n".encode("utf-8")
+        return f'$""\r\n'.encode("utf-8")
 
 class RespError(Exception):
     pass
@@ -49,19 +49,29 @@ async def handle_client(reader, writer):
 
             if "ECHO" in message:
                 # Extract the message to echo
+                print (message)
                 for i in range(len(message)):
                     if message[i].upper() == "ECHO" and message[i+1]:
+                        print(message[i+1])
                         writer.write(resp_bulk_string(message[i+1]))
                         await writer.drain()
                         print(f'Sent: {message[i+1]}')
+                    else:
+                        break
                     # if message[i+1] == '':
                     #     writer.write(b"+''\r\n")
                     #     await writer.drain()
+                else:
+                    writer.write(b"+''\r\n")
+                    await writer.drain()
 
 
             if "SET" in message:
                 # Extract the key and value to set
-                working_dict[message[1]] = message[2]
+                if message[1] and message[2]:
+                    working_dict[message[1]] = message[2]
+                else:
+                    raise RespError("Invalid format for SET command")
                 if len(message)>3:
                     add_time = None
                     if message[3] == "EX":
@@ -80,8 +90,12 @@ async def handle_client(reader, writer):
 
             if "GET" in message:
                 value = b'$-1\r\n'
-                key = message[1]
-                if key in timing_dict.keys():
+                if message[1]:
+                    key = message[1]
+                else:
+                    key = None
+                    print(f'Value not in dictionary')
+                if key and key in timing_dict.keys():
                     if timing_dict[key] > datetime.now():
                         value = working_dict[key]
                         print(f'Value found: {value}')
@@ -90,7 +104,8 @@ async def handle_client(reader, writer):
                         working_dict.pop(key)
                         timing_dict.pop(key)
                         print(f'Value not found')
-                elif key in working_dict.keys():
+
+                if key in working_dict.keys():
                     value = working_dict[key]
                     print(f'Value found: {value}')
                     value = resp_bulk_string(value)

@@ -59,8 +59,10 @@ def parse_bulk_string(buf, i):
 
     if buf[end:end + 2] != CRLF:
         raise RespError("Bulk string missing terminating CRLF")
-
-    return data.decode('utf-8'), end + 2
+    if data:
+        return data.decode('utf-8'), end + 2
+    else:
+        return "", i
 
 def parse_simple_string(buf, i):
     line, i = read_line(buf, i)
@@ -91,6 +93,8 @@ def parse_boolean(buf, i):
 
 def parser(buf, i):
     if i >= len(buf):
+        print("Empty/incomplete buffer")
+        return None
         raise RespError("Empty/incomplete buffer")
     t = buf[i:i + 1]
     if t == b"+":
@@ -116,6 +120,9 @@ def parser_first(buf: bytes, i=0) -> Any:
     Dispatcher that peeks at the first byte and routes to the right parser.
     Returns (value, next_index).
     """
+    if buf == b'$-1\r\n':
+        return None
+
     val, next_i = parser(buf, i)
     # If you want to enforce complete consumption, you can check next_i == len(buf)
     return val
@@ -127,6 +134,6 @@ def encode_integer(n: int):
         raise ValueError("Passed value is not an integer.")
 
 print('parser version: 0.3, created 26.10.2025')
-# inovprint(parser_first(b"$4\r\nPING\r\n"))
+# print(parser_first(b"$4\r\nPING\r\n"))
 # print(parser_first(b'+OK\r\n'))
 # print(parser_first(b"*2\r\n$4\r\nPING\r\n$4\r\nPONG\r\n"))

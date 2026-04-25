@@ -120,7 +120,7 @@ def parser_first(buf: bytes, i=0) -> Any:
     Dispatcher that peeks at the first byte and routes to the right parser.
     Returns (value, next_index).
     """
-    if buf == b'$-1\r\n':
+    if buf == b'$-1\r\n' or buf == '""'or buf is None:
         return None
 
     val, next_i = parser(buf, i)

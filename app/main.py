@@ -47,7 +47,7 @@ async def handle_client(reader, writer):
                     await writer.drain()
                     print(f'Sent: {response.decode("utf-8")}')
 
-            if "ECHO" in message:
+            elif "ECHO" in message:
                 # Extract the message to echo
                 print (message)
                 for i in range(len(message)):
@@ -62,11 +62,10 @@ async def handle_client(reader, writer):
                     #     writer.write(b"+''\r\n")
                     #     await writer.drain()
                 else:
-                    writer.write(b"+''\r\n")
+                    writer.write(b'+"""\r\n')
                     await writer.drain()
 
-
-            if "SET" in message:
+            elif "SET" in message:
                 # Extract the key and value to set
                 if message[1] and message[2]:
                     working_dict[message[1]] = message[2]
@@ -88,7 +87,7 @@ async def handle_client(reader, writer):
                 print(f'SET - Key: {message[1]} Value: {message[2]}\n'
                       f'Sent: {response}')
 
-            if "GET" in message:
+            elif "GET" in message:
                 value = b'$-1\r\n'
                 if message[1]:
                     key = message[1]
@@ -112,7 +111,7 @@ async def handle_client(reader, writer):
                 writer.write(value)
                 await writer.drain()
 
-            if "RPUSH" in message:
+            elif "RPUSH" in message:
                 key = message[1]
 
                 if key in working_dict:
@@ -123,7 +122,7 @@ async def handle_client(reader, writer):
                 writer.write(parser.encode_integer(len(working_dict[key])))
                 await writer.drain()
 
-            if message[0] == "LRANGE":
+            elif message[0] == "LRANGE":
                 key = message[1]
                 try:
                     start = int(message[2])
@@ -151,7 +150,8 @@ async def handle_client(reader, writer):
                     writer.write("")
                     await writer.drain()
                 ...
-
+            else:
+                raise RespError("Unknown command returns -ERR")
             print('----------------')
 
     except ConnectionResetError:

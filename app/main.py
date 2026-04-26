@@ -147,6 +147,8 @@ async def handle_client(reader, writer):
 
                     if start < 0:
                         start = len(working_list) + start
+                        if start < 0:
+                            start = 0
 
                     if stop < 0:
                         stop = len(working_list) + stop

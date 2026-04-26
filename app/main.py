@@ -157,7 +157,7 @@ async def handle_client(reader, writer):
                         else:
                             writer.write(parser.encode_bulk_string(working_list))
                     else:
-                        writer.write("")
+                        writer.write(b'*0\r\n')
 
                     await writer.drain()
 

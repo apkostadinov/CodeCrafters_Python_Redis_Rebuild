@@ -7,9 +7,14 @@ PORT = 6379         # server port
 def encode_command(*parts: str) -> bytes:
     out = f"*{len(parts)}\r\n".encode("utf-8")
     for part in parts:
-        payload = part.encode("utf-8")
-        out += f"${len(payload)}\r\n".encode("utf-8")
-        out += payload + b"\r\n"
+        if isinstance(part, str):
+            payload = part.encode("utf-8")
+            out += f"${len(payload)}\r\n".encode("utf-8")
+            out += payload + b"\r\n"
+            continue
+        else:
+            payload = part
+            out += f':{payload}\r\n'.encode("utf-8")
     return out
 
 def send_redis_command(*parts: str):
@@ -18,6 +23,7 @@ def send_redis_command(*parts: str):
         print(f"Sending: {resp}")
         sock.sendall(resp)
         data = sock.recv(1024)
+        print(f"Received raw: {data}")
         print(f"Received: {data} -> {parser.parser_first(data)}")
 
 
@@ -29,4 +35,9 @@ if __name__ == "__main__":
     send_redis_command("SET", "fruit", "apple")
     send_redis_command("GET", "fruit")
     send_redis_command("GET", "vegetable")
-    send_redis_command("RPUSH", "list_key", "element")
+    send_redis_command("RPUSH", "vegetable", "tomato", "cucumber", "potato")
+    send_redis_command("RPUSH", "fruit", "cherry", "pineapple", "strawberry")
+    send_redis_command("LRANGE","vegetable", 1, 2)
+    send_redis_command("GET", "fruit")
+    send_redis_command("SET", "fruit", "apple")
+    send_redis_command("LRANGE","fruit", 0, 3)

@@ -40,118 +40,129 @@ async def handle_client(reader, writer):
             print(f'Received: {data} from {address}\n'
                   f'Decoded: {message}')
 
-            if "PING" in message:
-                for _ in range(message.count("PING")):
-                    response = b'+PONG\r\n'
+            command = message[0]
+
+            match command:
+
+                case "PING":
+                    for _ in range(message.count("PING")):
+                        response = b'+PONG\r\n'
+                        writer.write(response)
+                        await writer.drain()
+                        print(f'Sent: {response.decode("utf-8")}')
+
+                case "ECHO":
+                    # Extract the message to echo
+                    print (message)
+                    for i in range(len(message)):
+                        if message[i].upper() == "ECHO" and message[i+1]:
+                            print(message[i+1])
+                            writer.write(resp_bulk_string(message[i+1]))
+                            await writer.drain()
+                            print(f'Sent: {message[i+1]}')
+                        else:
+                            break
+                        # if message[i+1] == '':
+                        #     writer.write(b"+''\r\n")
+                        #     await writer.drain()
+                    else:
+                        writer.write(b'+""\r\n')
+                        await writer.drain()
+
+                case "SET":
+                    # Extract the key and value to set
+                    if message[1] and message[2]:
+                        working_dict[message[1]] = message[2]
+                    else:
+                        raise RespError("Invalid format for SET command")
+                    if len(message)>3:
+                        add_time = None
+                        if message[3] == "EX":
+                            add_time = datetime.now() + timedelta(seconds=int(message[4]))
+                        elif message[3] == "PX":
+                            add_time = datetime.now() + timedelta(milliseconds=int(message[4]))
+                        if add_time:
+                            timing_dict[message[1]] = add_time
+                        else:
+                            raise RespError("Invalid time format for SET command")
+
+                    response = b'+OK\r\n'
                     writer.write(response)
                     await writer.drain()
-                    print(f'Sent: {response.decode("utf-8")}')
+                    print(f'SET - Key: {message[1]} Value: {working_dict[message[1]]}\n'
+                          f'Sent: {response}')
 
-            elif "ECHO" in message:
-                # Extract the message to echo
-                print (message)
-                for i in range(len(message)):
-                    if message[i].upper() == "ECHO" and message[i+1]:
-                        print(message[i+1])
-                        writer.write(resp_bulk_string(message[i+1]))
-                        await writer.drain()
-                        print(f'Sent: {message[i+1]}')
+                case "GET":
+                    value = b'$-1\r\n'
+                    if message[1]:
+                        key = message[1]
                     else:
-                        break
-                    # if message[i+1] == '':
-                    #     writer.write(b"+''\r\n")
-                    #     await writer.drain()
-                else:
-                    writer.write(b'+"""\r\n')
-                    await writer.drain()
-
-            elif "SET" in message:
-                # Extract the key and value to set
-                if message[1] and message[2]:
-                    working_dict[message[1]] = message[2]
-                else:
-                    raise RespError("Invalid format for SET command")
-                if len(message)>3:
-                    add_time = None
-                    if message[3] == "EX":
-                        add_time = datetime.now() + timedelta(seconds=int(message[4]))
-                    elif message[3] == "PX":
-                        add_time = datetime.now() + timedelta(milliseconds=int(message[4]))
-                    if add_time:
-                        timing_dict[message[1]] = add_time
-                    else:
-                        raise RespError("Invalid time format for SET command")
-                response = b'+OK\r\n'
-                writer.write(response)
-                await writer.drain()
-                print(f'SET - Key: {message[1]} Value: {message[2]}\n'
-                      f'Sent: {response}')
-
-            elif "GET" in message:
-                value = b'$-1\r\n'
-                if message[1]:
-                    key = message[1]
-                else:
-                    key = None
-                    print(f'Value not in dictionary')
-                if key and key in timing_dict.keys():
-                    if timing_dict[key] > datetime.now():
-                        value = working_dict[key]
-                        print(f'Value found: {value}')
-                        value = resp_bulk_string(value)
-                    else:
+                        key = None
+                        print(f'Value not in dictionary')
+                    if key and key in timing_dict.keys() and timing_dict[key] < datetime.now():
                         working_dict.pop(key)
                         timing_dict.pop(key)
                         print(f'Value not found')
 
-                if key in working_dict.keys():
-                    value = working_dict[key]
-                    print(f'Value found: {value}')
-                    value = resp_bulk_string(value)
-                writer.write(value)
-                await writer.drain()
-
-            elif "RPUSH" in message:
-                key = message[1]
-
-                if key in working_dict:
-                    for i in message[2:]:
-                        working_dict[key].append(i)
-                else:
-                    working_dict[key] = list(message[2:])
-                writer.write(parser.encode_integer(len(working_dict[key])))
-                await writer.drain()
-
-            elif message[0] == "LRANGE":
-                key = message[1]
-                try:
-                    start = int(message[2])
-                except ValueError:
-                    raise ValueError("Start index is not an integer")
-
-                try:
-                    stop = int(message[3])
-                except:
-                    raise ValueError("Stop index is not an integer")
-
-                try:
-                    working_list = working_dict[key]
-                except KeyError:
-                    writer.write(b"-Invalid Key\r\n")
-                    continue
-
-                if stop and stop >= len(working_list):
-                    stop = len(working_list)
-                if not any([start >= len(working_list), start > stop]):
-                    for i in range(start, stop + 1):
-                        writer.write(working_list[i])
-                        await writer.drain()
-                else:
-                    writer.write("")
+                    if key in working_dict.keys():
+                        value = working_dict[key]
+                        print(f'Value found: {value}')
+                        if isinstance(value, list) and len(value)>1:
+                            value = parser.encode_array(value)
+                        else:
+                            value = resp_bulk_string(value[0])
+                    writer.write(value)
                     await writer.drain()
-                ...
-            else:
-                raise RespError("Unknown command returns -ERR")
+
+                case "RPUSH":
+                    key = message[1]
+                    if key in working_dict:
+                        if not isinstance(working_dict[key], list):
+                            working_dict[key] = [working_dict[key]]
+                        for i in message[2:]:
+                            working_dict[key].append(i)
+                    else:
+                        working_dict[key] = message[2:]
+                    writer.write(parser.encode_integer(len(working_dict[key])))
+                    await writer.drain()
+
+                case "LRANGE":
+                    key = message[1]
+                    try:
+                        start = int(message[2])
+                    except ValueError:
+                        raise ValueError("Start index is not an integer")
+
+                    try:
+                        stop = int(message[3])
+                    except:
+                        raise ValueError("Stop index is not an integer")
+
+                    try:
+                        working_list = working_dict[key]
+                    except KeyError:
+                        print("LRANGE: Key not found")
+                        writer.write(b"*0\r\n")
+                        continue
+
+                    if stop and stop > len(working_list):
+                        stop = len(working_list)
+
+                    if not any([start >= len(working_list), start > stop]):
+                        returnable = []
+                        if isinstance(working_list, list): #check if value is list, if it's not it should a one word string
+                            for i in range(start, stop+1):
+                                returnable.append(working_list[i])
+                            writer.write(parser.encode_array(returnable))
+                        else:
+                            writer.write(parser.encode_bulk_string(working_list))
+                    else:
+                        writer.write("")
+
+                    await writer.drain()
+
+                case _:
+                    raise RespError("Unknown command returns -ERR")
             print('----------------')
 
     except ConnectionResetError:

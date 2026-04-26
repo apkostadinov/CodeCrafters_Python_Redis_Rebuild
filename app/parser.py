@@ -127,11 +127,30 @@ def parser_first(buf: bytes, i=0) -> Any:
     # If you want to enforce complete consumption, you can check next_i == len(buf)
     return val
 
+
+def encode_array(values: list[str|int]):
+    returnable = f'*{len(values)}\r\n'.encode("utf-8")
+    for var in values:
+        if isinstance(var, int):
+            returnable += encode_integer(var)
+        elif isinstance(var, str):
+            returnable += encode_bulk_string(var)
+    # array_len = len(returnable)
+    # returnable.insert(0, f'*{array_len}\r\n')
+    return returnable
+
 def encode_integer(n: int):
     if isinstance(n, int):
         return f":{n}\r\n".encode("utf-8")
     else:
         raise ValueError("Passed value is not an integer.")
+
+def encode_bulk_string(val: str):
+    if isinstance(val, str) and len(val) >= 1:
+        length = len(val)
+        return f"${length}\r\n{val}\r\n".encode("utf-8")
+    else:
+        raise ValueError("Passed value is not a string.")
 
 print('parser version: 0.3, created 26.10.2025')
 # print(parser_first(b"$4\r\nPING\r\n"))

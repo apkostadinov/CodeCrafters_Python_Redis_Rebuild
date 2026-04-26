@@ -145,12 +145,13 @@ async def handle_client(reader, writer):
                         writer.write(b"*0\r\n")
                         continue
 
-                    if stop and stop > len(working_list):
-                        stop = len(working_list)
+                    if stop > len(working_list):
+                        stop = len(working_list)-1
 
                     if not any([start >= len(working_list), start > stop]):
                         returnable = []
-                        if isinstance(working_list, list): #check if value is list, if it's not it should a one word string
+                        # check if value is list, if it's not it should a one word string
+                        if isinstance(working_list, list):
                             for i in range(start, stop+1):
                                 returnable.append(working_list[i])
                             writer.write(parser.encode_array(returnable))

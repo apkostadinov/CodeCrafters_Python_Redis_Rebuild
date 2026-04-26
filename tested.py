@@ -40,5 +40,6 @@ if __name__ == "__main__":
     send_redis_command("LRANGE","vegetable", 1, 2)
     send_redis_command("GET", "fruit")
     send_redis_command("SET", "fruit", "apple")
+    send_redis_command("RPUSH", "fruit", "cherry", "pineapple", "strawberry", "orange")
     send_redis_command("LRANGE","fruit", 0, 3)
-    send_redis_command("LRANGE", "fruit", 3, 0)
+    send_redis_command("LRANGE", "fruit", 0, 14)

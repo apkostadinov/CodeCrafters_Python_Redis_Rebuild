@@ -110,7 +110,7 @@ async def handle_client(reader, writer):
                         if isinstance(value, list) and len(value)>1:
                             value = parser.encode_array(value)
                         else:
-                            value = resp_bulk_string(value[0])
+                            value = resp_bulk_string(value)
                     writer.write(value)
                     await writer.drain()
 

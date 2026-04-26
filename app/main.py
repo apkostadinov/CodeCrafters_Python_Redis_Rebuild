@@ -145,6 +145,12 @@ async def handle_client(reader, writer):
                         writer.write(b"*0\r\n")
                         continue
 
+                    if start < 0:
+                        start = len(working_list) + start
+
+                    if stop < 0:
+                        stop = len(working_list) + stop
+
                     if stop > len(working_list):
                         stop = len(working_list)-1
 

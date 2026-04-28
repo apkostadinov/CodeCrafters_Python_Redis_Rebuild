@@ -196,6 +196,14 @@ async def handle_client(reader, writer):
                         writer.write(b":0\r\n")
                     await writer.drain()
 
+                case "LPOP":
+                    if message[1]:
+                        key = message[1]
+                    try:
+                        writer.write(working_dict[key].pop(0))
+                    except KeyError:
+                        writer.write(b"$-1\r\n")
+                    await writer.drain()
 
                 case _:
                     raise RespError("Unknown command returns -ERR")

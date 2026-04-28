@@ -187,13 +187,13 @@ async def handle_client(reader, writer):
                         key = message[1]
                     else:
                         key=None
-                        writer.write(b"*0\r\n")
+                        writer.write(b":0\r\n")
 
                     try:
                         writer.write(parser.encode_integer(len(working_dict[key])))
                         print("LLEN: Key not found")
                     except KeyError:
-                        writer.write(b"*0\r\n")
+                        writer.write(b":0\r\n")
                     await writer.drain()
 
 

@@ -200,7 +200,7 @@ async def handle_client(reader, writer):
                     if message[1]:
                         key = message[1]
                     try:
-                        writer.write(working_dict[key].pop(0))
+                        writer.write(parser.encode(working_dict[key].pop(0)))
                     except KeyError:
                         writer.write(b"$-1\r\n")
                     await writer.drain()

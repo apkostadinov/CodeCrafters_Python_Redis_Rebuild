@@ -152,6 +152,16 @@ def encode_bulk_string(val: str):
     else:
         raise ValueError("Passed value is not a string.")
 
+def encode(val: [int, str, list]):
+    if isinstance(val, list):
+        return encode_array(val)
+    elif isinstance(val, str):
+        return encode_bulk_string(val)
+    elif isinstance(val, int):
+        return encode_integer(val)
+    else:
+        raise RespError("Passed value is not a list, str or int.")
+
 print('parser version: 0.3, created 26.10.2025')
 # print(parser_first(b"$4\r\nPING\r\n"))
 # print(parser_first(b'+OK\r\n'))

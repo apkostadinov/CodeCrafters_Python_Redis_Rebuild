@@ -186,12 +186,13 @@ async def handle_client(reader, writer):
                     if message[1]:
                         key = message[1]
                     else:
+                        key=None
                         writer.write(b"*0\r\n")
 
-                    if working_dict[key]:
+                    try:
                         writer.write(parser.encode_integer(len(working_dict[key])))
                         print("LLEN: Key not found")
-                    else:
+                    except KeyError:
                         writer.write(b"*0\r\n")
                     await writer.drain()
 

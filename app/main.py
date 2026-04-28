@@ -199,10 +199,24 @@ async def handle_client(reader, writer):
                 case "LPOP":
                     if message[1]:
                         key = message[1]
-                    try:
-                        writer.write(parser.encode(working_dict[key].pop(0)))
-                    except KeyError:
+                    if len(message)>2:
+                        count = message[2]
+                    else:
+                        count = 1
+
+                    if key not in working_dict:
                         writer.write(b"$-1\r\n")
+                        await writer.drain()
+                        continue
+
+                    if count > 1:
+                        returnable = []
+                        for _ in range(count):
+                            returnable.append(working_dict[key].pop(0))
+                    elif count == 1 :
+                        returnable = working_dict[key].pop(0)
+
+                    writer.write(parser.encode(returnable))
                     await writer.drain()
 
 

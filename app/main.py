@@ -185,6 +185,8 @@ async def handle_client(reader, writer):
                 case "LLEN":
                     if message[1]:
                         key = message[1]
+                    else:
+                        writer.write(b"*0\r\n")
 
                     if working_dict[key]:
                         writer.write(parser.encode_integer(len(working_dict[key])))

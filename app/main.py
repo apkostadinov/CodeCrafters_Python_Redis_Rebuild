@@ -167,7 +167,19 @@ async def handle_client(reader, writer):
                             writer.write(parser.encode_bulk_string(working_list))
                     else:
                         writer.write(b'*0\r\n')
+                    await writer.drain()
 
+                case "LPUSH":
+                    key = message[1]
+                    if key in working_dict:
+                        if not isinstance(working_dict[key], list):
+                            working_dict[key] = [working_dict[key]]
+                        for i in message[2:]:
+                            working_dict[key].insert(0,i)
+                    else:
+                        working_dict[key] = message[len(message):1:-1]
+                    print(working_dict[key])
+                    writer.write(parser.encode_integer(len(working_dict[key])))
                     await writer.drain()
 
                 case _:

@@ -29,7 +29,7 @@ def send_redis_command(*parts: str):
 
 if __name__ == "__main__":
     print(parser.parser_first(b'*3\r\n$3\r\nSET\r\n$9\r\nblueberry\r\n$9\r\nraspberry\r\n'))
-    send_redis_command("PING")
+    # send_redis_command("PING")
     # send_redis_command("PING")
     # send_redis_command("ECHO", "hello")
     # send_redis_command("SET", "fruit", "apple")
@@ -43,5 +43,8 @@ if __name__ == "__main__":
     # send_redis_command("RPUSH", "fruit", "cherry", "pineapple", "strawberry", "orange")
     # send_redis_command("LRANGE","fruit", 0, -3)
     # send_redis_command("LRANGE", "fruit", 0, 14)
-    send_redis_command("RPUSH", "list_key", "a","b","c","d","e")
-    send_redis_command("LRANGE", "list_key", -2, -1)
+    # send_redis_command("RPUSH", "list_key", "a","b","c","d","e")
+    # send_redis_command("LRANGE", "list_key", -2, -1)
+    send_redis_command("LPUSH", "list_key", "c")
+    send_redis_command("LPUSH", "list_key", "b", "a")
+    send_redis_command("LRANGE","list_key",0, - 1)

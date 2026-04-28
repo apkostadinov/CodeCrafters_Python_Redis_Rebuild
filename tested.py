@@ -48,3 +48,4 @@ if __name__ == "__main__":
     send_redis_command("LPUSH", "list_key", "c")
     send_redis_command("LPUSH", "list_key", "b", "a")
     send_redis_command("LRANGE","list_key",0, - 1)
+    send_redis_command("LLEN", "list_key")

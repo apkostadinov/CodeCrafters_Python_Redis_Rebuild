@@ -182,6 +182,18 @@ async def handle_client(reader, writer):
                     writer.write(parser.encode_integer(len(working_dict[key])))
                     await writer.drain()
 
+                case "LLEN":
+                    if message[1]:
+                        key = message[1]
+
+                    if working_dict[key]:
+                        writer.write(parser.encode_integer(len(working_dict[key])))
+                        print("LLEN: Key not found")
+                    else:
+                        writer.write(b"*0\r\n")
+                    await writer.drain()
+
+
                 case _:
                     raise RespError("Unknown command returns -ERR")
             print('----------------')

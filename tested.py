@@ -50,4 +50,4 @@ if __name__ == "__main__":
     # send_redis_command("LRANGE","list_key",0, - 1)
     # send_redis_command("LLEN", "list_key")
     send_redis_command('RPUSH', 'mango', 'apple', 'orange', 'mango', 'strawberry', 'blueberry', 'banana', 'raspberry')
-    send_redis_command("LPOP", "mango")
+    send_redis_command("LPOP", "mango", 2)

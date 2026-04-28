@@ -199,12 +199,13 @@ async def handle_client(reader, writer):
                 case "LPOP":
                     if message[1]:
                         key = message[1]
+                        print(working_dict[key])
                     if len(message)>2:
                         count = message[2]
                     else:
                         count = 1
 
-                    if key not in working_dict:
+                    if key not in working_dict or len(working_dict[key]) == 0:
                         writer.write(b"$-1\r\n")
                         await writer.drain()
                         continue
@@ -212,7 +213,10 @@ async def handle_client(reader, writer):
                     if count > 1:
                         returnable = []
                         for _ in range(count):
-                            returnable.append(working_dict[key].pop(0))
+                            value = working_dict[key].pop(0)
+                            print(value)
+                            print(working_dict[key])
+                            returnable.append(value)
                     elif count == 1 :
                         returnable = working_dict[key].pop(0)
 

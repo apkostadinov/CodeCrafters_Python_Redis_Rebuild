@@ -205,6 +205,7 @@ async def handle_client(reader, writer):
                         writer.write(b"$-1\r\n")
                     await writer.drain()
 
+
                 case _:
                     raise RespError("Unknown command returns -ERR")
             print('----------------')

@@ -201,7 +201,12 @@ async def handle_client(reader, writer):
                         key = message[1]
                         print(working_dict[key])
                     if len(message)>2:
-                        count = message[2]
+                        try:
+                            count = int(message[2])
+                        except ValueError:
+                            writer.write(b"$-1\r\n")
+                            await writer.drain()
+                            continue
                     else:
                         count = 1
 

@@ -29,12 +29,12 @@ def send_redis_command(*parts: str):
 
 if __name__ == "__main__":
     print(parser.parser_first(b'*3\r\n$3\r\nSET\r\n$9\r\nblueberry\r\n$9\r\nraspberry\r\n'))
-    # send_redis_command("PING")
-    # send_redis_command("PING")
-    # send_redis_command("ECHO", "hello")
-    # send_redis_command("SET", "fruit", "apple")
-    # send_redis_command("GET", "fruit")
-    # send_redis_command("GET", "vegetable")
+    send_redis_command("PING")
+    send_redis_command("PING")
+    send_redis_command("ECHO", "hello")
+    send_redis_command("SET", "fruit", "apple")
+    send_redis_command("GET", "fruit")
+    send_redis_command("GET", "vegetable")
     # send_redis_command("RPUSH", "vegetable", "tomato", "cucumber", "potato")
     # send_redis_command("RPUSH", "fruit", "cherry", "pineapple", "strawberry")
     # send_redis_command("LRANGE","vegetable", 1, 2)

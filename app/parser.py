@@ -20,6 +20,9 @@ CRLF = b"\r\n"
 class RespError(Exception):
     pass
 
+class IncompleteMessage(Exception):
+    pass
+
 def read_line(buf: bytes, i: int) -> Tuple[bytes, int]:
     """
     Read a single RESP line terminated by CRLF starting at index i.
@@ -33,36 +36,49 @@ def read_line(buf: bytes, i: int) -> Tuple[bytes, int]:
 
 def parse_array(buf, i):
     line, i = read_line(buf, i)
-    rng = int(line[1:])
+
+    try:
+        length = int(line[1:])
+    except ValueError:
+        raise RespError("Invalid array length")
+
+    # Null array
+    if length == -1:
+        return None, i
 
     values = []
 
-    for _ in range(rng):
-        element, i = parser(buf, i)
+    for _ in range(length):
+        element, i = parser(buf, i)  # may raise IncompleteMessage
         values.append(element)
 
-    return values, i+2
+    return values, i
 
 def parse_bulk_string(buf, i):
-    line,i = read_line(buf,i)
-    length = int(line[1:])
+    # Read "$<length>\r\n"
+    line, i = read_line(buf, i)
 
-    if length == -1 and len(buf) > 5:
-        raise RespError("Incomplete frame: missing CRLF")
-    if length == -1 or length == 0:
-        return None
+    try:
+        length = int(line[1:])
+    except ValueError:
+        raise RespError("Invalid bulk string length")
 
+    # NULL bulk string
+    if length == -1:
+        return None, i
+
+    # Check if we have enough data
     end = i + length
-    if end + 2 > len(str(buf)):
-        raise RespError("Incomplete bulk string data")
+    if end + 2 > len(buf):
+        raise IncompleteMessage()
+
     data = buf[i:end]
 
+    # Validate trailing CRLF
     if buf[end:end + 2] != CRLF:
         raise RespError("Bulk string missing terminating CRLF")
-    if data:
-        return data.decode('utf-8'), end + 2
-    else:
-        return "", i
+
+    return data.decode("utf-8"), end + 2
 
 def parse_simple_string(buf, i):
     line, i = read_line(buf, i)
@@ -93,9 +109,8 @@ def parse_boolean(buf, i):
 
 def parser(buf, i):
     if i >= len(buf):
-        print("Empty/incomplete buffer")
-        return None
-        raise RespError("Empty/incomplete buffer")
+        raise IncompleteMessage()
+
     t = buf[i:i + 1]
     if t == b"+":
         return parse_simple_string(buf, i)
@@ -120,12 +135,8 @@ def parser_first(buf: bytes, i=0) -> Any:
     Dispatcher that peeks at the first byte and routes to the right parser.
     Returns (value, next_index).
     """
-    if buf == b'$-1\r\n' or buf == '""'or buf is None:
-        return None
-
     val, next_i = parser(buf, i)
-    # If you want to enforce complete consumption, you can check next_i == len(buf)
-    return val
+    return val, next_i
 
 
 def encode_array(values: list[str|int]):

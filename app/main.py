@@ -1,7 +1,5 @@
 import socket  # noqa: F401
-import threading
 import asyncio
-from asyncio import IncompleteReadError
 from datetime import datetime, time, timedelta
 from . import parser
 
@@ -28,7 +26,7 @@ async def handle_client(reader, writer):
             while True:
                 try:
                     message, consumed = parser.parser(buffer,0)
-                except IncompleteReadError:
+                except parser.IncompleteMessage:
                     break
 
                 buffer = buffer[consumed:]
@@ -134,6 +132,8 @@ async def handle_command(message, writer):
                     value = parser.encode_array(value)
                 else:
                     value = resp_bulk_string(value)
+            else:
+                value = b'$-1\r\n'
             writer.write(value)
             await writer.drain()
 

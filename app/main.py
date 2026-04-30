@@ -267,7 +267,7 @@ async def handle_command(message, writer):
 
         case "BLPOP":
             key = message[1]
-            timeout = int(message[2]) if len(message) > 2 else None
+            timeout = int(message[2]) if len(message) > 2 else 0
 
             if key in working_dict and len(working_dict[key]) > 0:
                 value = working_dict[key].pop(0)
@@ -281,10 +281,11 @@ async def handle_command(message, writer):
             waiting_clients.setdefault(key, []).append(future)
 
             try:
-
-                value = await asyncio.wait_for(future, timeout)
-                response = parser.encode_array([key, value])
-                writer.write(response)
+                if timeout == 0:
+                    value = await.future
+                else:
+                    value = await asyncio.wait_for(future, timeout)
+                writer.write(parser.encode_array([key, value]))
                 await writer.drain()
 
             except asyncio.TimeoutError:

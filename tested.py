@@ -51,3 +51,6 @@ if __name__ == "__main__":
     send_redis_command("LLEN", "list_key")
     send_redis_command('RPUSH', 'mango', 'apple', 'orange', 'mango', 'strawberry', 'blueberry', 'banana', 'raspberry')
     send_redis_command("LPOP", "mango", 2)
+    send_redis_command('BLPOP', 'pineapple', '0')
+    send_redis_command('BLPOP', 'pineapple', '0')
+    send_redis_command('RPUSH', 'pineapple', 'apple')

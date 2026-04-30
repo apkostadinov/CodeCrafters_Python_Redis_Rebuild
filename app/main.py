@@ -139,21 +139,25 @@ async def handle_command(message, writer):
 
         case "RPUSH":
             key = message[1]
-            if key in working_dict:
-                if not isinstance(working_dict[key], list):
-                    working_dict[key] = [working_dict[key]]
-                for i in message[2:]:
-                    working_dict[key].append(i)
-            else:
-                working_dict[key] = message[2:]
+            values = message[2:]
 
-            if key in waiting_clients and waiting_clients[key]:
-                future = waiting_clients[key].pop(0)
-                if not future.done():
-                    value = working_dict[key].pop(0)
-                    future.set_result(value)
+            count_added = 0
 
-            writer.write(parser.encode_integer(len(working_dict[key])))
+            for value in values:
+                if key in waiting_clients and waiting_clients[key]:
+                    future = waiting_clients[key].pop(0)
+                    if not future.done():
+                        future.set_result(value)
+                    count_added += 1
+                else:
+                    working_dict.setdefault(key, []).append(value)
+                    count_added += 1
+
+            current_len = len(working_dict.get(key, [])) + (
+                0 if key not in waiting_clients else 0
+            )
+
+            writer.write(parser.encode_integer(current_len if current_len else count_added))
             await writer.drain()
 
         case "LRANGE":

@@ -282,7 +282,7 @@ async def handle_command(message, writer):
 
             try:
                 if timeout == 0:
-                    value = await.future
+                    value = await future
                 else:
                     value = await asyncio.wait_for(future, timeout)
                 writer.write(parser.encode_array([key, value]))

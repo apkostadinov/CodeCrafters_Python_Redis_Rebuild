@@ -96,6 +96,8 @@ async def handle_command(message, writer):
                 str_dict[message[1]] = message[2]
             else:
                 raise RespError("Invalid format for SET command")
+            #TODO
+            #CHANGE TIMING DICT!!!
             if len(message) > 3:
                 add_time = None
                 if message[3] == "EX":

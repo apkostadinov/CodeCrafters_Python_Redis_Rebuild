@@ -93,7 +93,7 @@ async def handle_command(message, writer):
         case "SET":
             # Extract the key and value to set
             if message[1] and message[2]:
-                working_dict[message[1]] = message[2]
+                str_dict[message[1]] = message[2]
             else:
                 raise RespError("Invalid format for SET command")
             if len(message) > 3:
@@ -110,7 +110,7 @@ async def handle_command(message, writer):
             response = b'+OK\r\n'
             writer.write(response)
             await writer.drain()
-            print(f'SET - Key: {message[1]} Value: {working_dict[message[1]]}\n'
+            print(f'SET - Key: {message[1]} Value: {str_dict[message[1]]}\n'
                   f'Sent: {response}')
 
         case "GET":
@@ -121,12 +121,12 @@ async def handle_command(message, writer):
                 key = None
                 print(f'Value not in dictionary')
             if key and key in timing_dict.keys() and timing_dict[key] < datetime.now():
-                working_dict.pop(key)
+                str_dict.pop(key)
                 timing_dict.pop(key)
                 print(f'Value not found')
 
-            if key in working_dict.keys():
-                value = working_dict[key]
+            if key in str_dict.keys():
+                value = str_dict[key]
                 print(f'Value found: {value}')
                 if isinstance(value, list) and len(value) > 1:
                     value = parser.encode_array(value)
@@ -310,6 +310,7 @@ async def main():
 
 
 if __name__ == "__main__":
+    str_dict = dict()
     working_dict = dict()
     timing_dict = dict()
     waiting_clients = dict()

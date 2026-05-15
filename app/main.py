@@ -271,7 +271,7 @@ async def handle_command(message, writer):
 
         case "BLPOP":
             key = message[1]
-            timeout = int(message[2]) if len(message) > 2 else 0
+            timeout = float(message[2]) if len(message) > 2 else 0
 
             if key in working_dict and len(working_dict[key]) > 0:
                 value = working_dict[key].pop(0)

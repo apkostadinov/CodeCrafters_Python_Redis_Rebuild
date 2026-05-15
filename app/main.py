@@ -294,7 +294,7 @@ async def handle_command(message, writer):
 
             except asyncio.TimeoutError:
                 waiting_clients[key].remove(future)
-                writer.write(b"$-1\r\n")
+                writer.write(b"*-1\r\n")
                 await writer.drain()
 
         case _:

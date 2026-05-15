@@ -297,6 +297,18 @@ async def handle_command(message, writer):
                 writer.write(b"*-1\r\n")
                 await writer.drain()
 
+        case "TYPE":
+            key = message[1]
+            if key in str_dict.keys():
+                response = parser.encode_simple_string("string")
+            elif key in working_dict.keys():
+                response = parser.encode_simple_string("list")
+            else:
+                response = parser.encode_simple_string("none")
+
+            writer.write(response)
+            await writer.drain()
+
         case _:
             raise RespError("Unknown command returns -ERR")
     print('----------------')

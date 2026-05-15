@@ -96,8 +96,6 @@ async def handle_command(message, writer):
                 str_dict[message[1]] = message[2]
             else:
                 raise RespError("Invalid format for SET command")
-            #TODO
-            #CHANGE TIMING DICT!!!
             if len(message) > 3:
                 add_time = None
                 if message[3] == "EX":
@@ -105,7 +103,7 @@ async def handle_command(message, writer):
                 elif message[3] == "PX":
                     add_time = datetime.now() + timedelta(milliseconds=int(message[4]))
                 if add_time:
-                    timing_dict[message[1]] = add_time
+                    str_timing_dict[message[1]] = add_time
                 else:
                     raise RespError("Invalid time format for SET command")
 
@@ -122,9 +120,9 @@ async def handle_command(message, writer):
             else:
                 key = None
                 print(f'Value not in dictionary')
-            if key and key in timing_dict.keys() and timing_dict[key] < datetime.now():
+            if key and key in str_timing_dict.keys() and str_timing_dict[key] < datetime.now():
                 str_dict.pop(key)
-                timing_dict.pop(key)
+                str_timing_dict.pop(key)
                 print(f'Value not found')
 
             if key in str_dict.keys():
@@ -313,8 +311,8 @@ async def main():
 
 if __name__ == "__main__":
     str_dict = dict()
+    str_timing_dict = dict()
     working_dict = dict()
-    timing_dict = dict()
     waiting_clients = dict()
     asyncio.run(main())
     #main()

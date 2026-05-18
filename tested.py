@@ -28,13 +28,13 @@ def send_redis_command(*parts: str):
 
 
 if __name__ == "__main__":
-    print(parser.parser_first(b'*3\r\n$3\r\nSET\r\n$9\r\nblueberry\r\n$9\r\nraspberry\r\n'))
-    send_redis_command("PING")
-    send_redis_command("PING")
-    send_redis_command("ECHO", "hello")
-    send_redis_command("SET", "fruit", "apple")
-    send_redis_command("GET", "fruit")
-    send_redis_command("GET", "vegetable")
+    # print(parser.parser_first(b'*3\r\n$3\r\nSET\r\n$9\r\nblueberry\r\n$9\r\nraspberry\r\n'))
+    # send_redis_command("PING")
+    # send_redis_command("PING")
+    # send_redis_command("ECHO", "hello")
+    # send_redis_command("SET", "fruit", "apple")
+    # send_redis_command("GET", "fruit")
+    # send_redis_command("GET", "vegetable")
     # send_redis_command("RPUSH", "vegetable", "tomato", "cucumber", "potato")
     # send_redis_command("RPUSH", "fruit", "cherry", "pineapple", "strawberry")
     # send_redis_command("LRANGE","vegetable", 1, 2)
@@ -55,3 +55,6 @@ if __name__ == "__main__":
     # send_redis_command('BLPOP', 'pineapple', '0')
     # send_redis_command('RPUSH', 'pineapple', 'apple')
     send_redis_command("TYPE", "fruit")
+    #send_redis_command("XADD", "stream_key", "0-1", "foo", "bar")
+    #send_redis_command("XADD", "stream_key", "0 - 1", "foo", "bar")
+    send_redis_command("XADD", "stream_key", "1526919030474-0", "temperature", 36, "humidity", 95)

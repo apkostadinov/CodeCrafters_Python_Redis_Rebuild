@@ -2,6 +2,7 @@ import socket  # noqa: F401
 import asyncio
 from datetime import datetime, time, timedelta
 from . import parser
+#import parser
 
 def resp_bulk_string(message: str) -> bytes:
     """Convert a string to RESP bulk string format."""
@@ -303,10 +304,28 @@ async def handle_command(message, writer):
                 response = parser.encode_simple_string("string")
             elif key in working_dict.keys():
                 response = parser.encode_simple_string("list")
+            elif key in streams.keys():
+                response = parser.encode_simple_string("stream")
             else:
                 response = parser.encode_simple_string("none")
 
             writer.write(response)
+            await writer.drain()
+
+        case "XADD":
+            print(message)
+            key = message[1]
+            main_id = message[2]
+            #temp_dict = {x:y for x,y in message[3::2]}
+            temp_dict = dict()
+            for i in range(3, len(message), 2):
+                temp_dict[message[i]] = message[i + 1]
+            if key in streams.keys():
+                streams[key].append[{"xid":main_id} | temp_dict]
+            else:
+                streams[key] = [{"xid":main_id} | temp_dict]
+
+            writer.write(parser.encode_bulk_string(main_id))
             await writer.drain()
 
         case _:
@@ -326,5 +345,6 @@ if __name__ == "__main__":
     str_timing_dict = dict()
     working_dict = dict()
     waiting_clients = dict()
+    streams = dict()
     asyncio.run(main())
     #main()

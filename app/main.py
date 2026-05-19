@@ -320,15 +320,18 @@ async def handle_command(message, writer):
             temp_dict = dict()
             for i in range(3, len(message), 2):
                 temp_dict[message[i]] = message[i + 1]
-            if key in streams.keys() and validate_stream_key(main_id,streams[key][-1]):
+            if key in streams.keys() and validate_stream_id(main_id, streams[key][-1]):
                 streams[key].append({"xid":main_id} | temp_dict)
                 response = parser.encode_bulk_string(main_id)
-            elif key not in streams.keys() and validate_stream_key(main_id):
+            elif key not in streams.keys() and validate_stream_id(main_id):
                 streams[key] = [{"xid":main_id} | temp_dict]
                 response = parser.encode_bulk_string(main_id)
             else:
                 print("Invalid main_id")
-                response = parser.encode_simple_error("ERR The ID specified in XADD is equal or smaller than the target stream top item")
+                if deconstruct_stream_id(main_id) == (0,0):
+                    response = parser.encode_simple_error("ERR The ID specified in XADD must be greater than 0-0")
+                else:
+                    response = parser.encode_simple_error("ERR The ID specified in XADD is equal or smaller than the target stream top item")
 
             if response:
                 writer.write(response)
@@ -345,22 +348,27 @@ async def main():
     async with server:
         await server.serve_forever()
 
-def validate_stream_key(main_id, stream = None):
-    print(main_id)
+def deconstruct_stream_id(stream_id):
     try:
-        main_id_ms, main_id_sq = [int(str.strip(y)) for y in main_id.split("-")]
+        id_ms, id_sq = [int(str.strip(x)) for x in stream_id.split("-")]
     except (ValueError, KeyError):
         print("Proposed ID is invalid")
+        return None, None
+    return id_ms, id_sq
+
+def validate_stream_id(main_id, stream = None):
+    print(main_id)
+    main_id_ms, main_id_sq = deconstruct_stream_id(main_id)
+
+    if not main_id_ms or not main_id_sq:
         return False
 
     if main_id_ms == 0 and main_id_sq == 0:
         return False
 
     if stream:
-        try:
-            last_id_ms, last_id_sq = [int(str.strip(x)) for x in stream["xid"].split("-")]
-        except (ValueError, KeyError):
-            print("Stream key is invalid")
+        last_id_ms, last_id_sq = deconstruct_stream_id(stream)
+        if not last_id_ms or not last_id_sq:
             return False
     else:
         return True

@@ -320,6 +320,7 @@ async def handle_command(message, writer):
             temp_dict = dict()
             for i in range(3, len(message), 2):
                 temp_dict[message[i]] = message[i + 1]
+
             if key in streams.keys() and validate_stream_id(main_id, streams[key][-1]):
                 streams[key].append({"xid":main_id} | temp_dict)
                 response = parser.encode_bulk_string(main_id)
@@ -333,9 +334,9 @@ async def handle_command(message, writer):
                 else:
                     response = parser.encode_simple_error("ERR The ID specified in XADD is equal or smaller than the target stream top item")
 
-            if response:
-                writer.write(response)
-                await writer.drain()
+
+            writer.write(response)
+            await writer.drain()
 
         case _:
             raise RespError("Unknown command returns -ERR")

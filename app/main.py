@@ -367,7 +367,7 @@ def validate_stream_id(main_id, stream = None):
         return False
 
     if stream:
-        last_id_ms, last_id_sq = deconstruct_stream_id(stream)
+        last_id_ms, last_id_sq = deconstruct_stream_id(stream["xid"])
         if not last_id_ms or not last_id_sq:
             return False
     else:

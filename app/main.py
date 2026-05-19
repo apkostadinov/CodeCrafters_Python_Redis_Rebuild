@@ -321,7 +321,7 @@ async def handle_command(message, writer):
             for i in range(3, len(message), 2):
                 temp_dict[message[i]] = message[i + 1]
             if key in streams.keys() and validate_stream_key(main_id,streams[key][-1]):
-                streams[key].append[{"xid":main_id} | temp_dict]
+                streams[key].append({"xid":main_id} | temp_dict)
                 response = parser.encode_bulk_string(main_id)
             elif key not in streams.keys() and validate_stream_key(main_id):
                 streams[key] = [{"xid":main_id} | temp_dict]

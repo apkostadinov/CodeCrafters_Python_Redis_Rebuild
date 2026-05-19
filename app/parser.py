@@ -169,6 +169,12 @@ def encode_simple_string(val:str):
     else:
         raise ValueError("Passed value is not a string.")
 
+def encode_simple_error(val:str):
+    if isinstance(val, str):
+        return f"-{val}\r\n".encode("utf-8")
+    else:
+        raise ValueError("Passed value is not a string.")
+
 def encode(val: [int, str, list]):
     if isinstance(val, list):
         return encode_array(val)

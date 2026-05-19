@@ -57,4 +57,7 @@ if __name__ == "__main__":
     send_redis_command("TYPE", "fruit")
     #send_redis_command("XADD", "stream_key", "0-1", "foo", "bar")
     #send_redis_command("XADD", "stream_key", "0 - 1", "foo", "bar")
-    send_redis_command("XADD", "stream_key", "1526919030474-0", "temperature", 36, "humidity", 95)
+    # send_redis_command("XADD", "stream_key", "1526919030474-0", "temperature", 36, "humidity", 95)
+
+    send_redis_command("XADD","some_key", "1 - 1", "foo", "bar")
+    send_redis_command("XADD","some_key", "0 - 1", "foo", "baz")

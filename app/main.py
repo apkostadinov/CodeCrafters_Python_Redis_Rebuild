@@ -2,7 +2,7 @@ import socket  # noqa: F401
 import asyncio
 from datetime import datetime, time, timedelta
 from . import parser
-#import parser
+# import parser
 
 def resp_bulk_string(message: str) -> bytes:
     """Convert a string to RESP bulk string format."""
@@ -320,13 +320,19 @@ async def handle_command(message, writer):
             temp_dict = dict()
             for i in range(3, len(message), 2):
                 temp_dict[message[i]] = message[i + 1]
-            if key in streams.keys():
+            if key in streams.keys() and validate_stream_key(main_id,streams[key][-1]):
                 streams[key].append[{"xid":main_id} | temp_dict]
-            else:
+                response = parser.encode_bulk_string(main_id)
+            elif key not in streams.keys() and validate_stream_key(main_id):
                 streams[key] = [{"xid":main_id} | temp_dict]
+                response = parser.encode_bulk_string(main_id)
+            else:
+                print("Invalid main_id")
+                response = parser.encode_simple_error("ERR The ID specified in XADD is equal or smaller than the target stream top item")
 
-            writer.write(parser.encode_bulk_string(main_id))
-            await writer.drain()
+            if response:
+                writer.write(response)
+                await writer.drain()
 
         case _:
             raise RespError("Unknown command returns -ERR")
@@ -339,6 +345,39 @@ async def main():
     async with server:
         await server.serve_forever()
 
+def validate_stream_key(main_id, stream = None):
+    print(main_id)
+    try:
+        main_id_ms, main_id_sq = [int(str.strip(y)) for y in main_id.split("-")]
+    except (ValueError, KeyError):
+        print("Proposed ID is invalid")
+        return False
+
+    if main_id_ms == 0 and main_id_sq == 0:
+        return False
+
+    if stream:
+        try:
+            last_id_ms, last_id_sq = [int(str.strip(x)) for x in stream["xid"].split("-")]
+        except (ValueError, KeyError):
+            print("Stream key is invalid")
+            return False
+    else:
+        return True
+
+    if last_id_ms > main_id_ms:
+        print("Last MS ID larger than Proposed MS ID")
+        return False
+    elif last_id_ms == main_id_ms:
+        print("Last MS ID equals to Proposed MS ID")
+        if last_id_sq < main_id_sq:
+            print("Last MS ID is smaller than Proposed MS ID")
+            return True
+        else:
+            print("Last MS ID is equals or larger than Proposed MS ID")
+            return False
+    else:
+        return True
 
 if __name__ == "__main__":
     str_dict = dict()

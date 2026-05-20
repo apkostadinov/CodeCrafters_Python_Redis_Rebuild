@@ -1,8 +1,8 @@
 import socket  # noqa: F401
 import asyncio
 from datetime import datetime, time, timedelta
-#from . import parser
-import parser
+from . import parser
+#import parser
 
 def resp_bulk_string(message: str) -> bytes:
     """Convert a string to RESP bulk string format."""

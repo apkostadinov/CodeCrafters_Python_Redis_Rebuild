@@ -313,7 +313,6 @@ async def handle_command(message, writer):
             await writer.drain()
 
         case "XADD":
-            print(message)
             key = message[1]
             main_id = message[2]
             #temp_dict = {x:y for x,y in message[3::2]}
@@ -321,7 +320,9 @@ async def handle_command(message, writer):
             for i in range(3, len(message), 2):
                 temp_dict[message[i]] = message[i + 1]
 
-            if key in streams.keys() and validate_stream_id(main_id, streams[key][-1]):
+            if deconstruct_stream_id(main_id) == (0, 0):
+                response = parser.encode_simple_error("ERR The ID specified in XADD must be greater than 0-0")
+            elif key in streams.keys() and validate_stream_id(main_id, streams[key][-1]):
                 streams[key].append({"xid":main_id} | temp_dict)
                 response = parser.encode_bulk_string(main_id)
             elif key not in streams.keys() and validate_stream_id(main_id):
@@ -329,10 +330,7 @@ async def handle_command(message, writer):
                 response = parser.encode_bulk_string(main_id)
             else:
                 print("Invalid main_id")
-                if deconstruct_stream_id(main_id) == (0,0):
-                    response = parser.encode_simple_error("ERR The ID specified in XADD must be greater than 0-0")
-                else:
-                    response = parser.encode_simple_error("ERR The ID specified in XADD is equal or smaller than the target stream top item")
+                response = parser.encode_simple_error("ERR The ID specified in XADD is equal or smaller than the target stream top item")
 
 
             writer.write(response)

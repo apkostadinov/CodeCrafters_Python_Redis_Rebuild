@@ -63,3 +63,4 @@ if __name__ == "__main__":
     send_redis_command("XADD","some_key", "1 - 1", "foo", "bar")
     send_redis_command("XADD","some_key", "0 - 1", "foo", "baz")
     send_redis_command("XADD","some_key", "0 - 0", "foo", "baz")
+    send_redis_command("XADD","banana", "0-1", "foo", "bar")

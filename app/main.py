@@ -2,7 +2,7 @@ import socket  # noqa: F401
 import asyncio
 from datetime import datetime, time, timedelta
 from . import parser
-# import parser
+#import parser
 
 def resp_bulk_string(message: str) -> bytes:
     """Convert a string to RESP bulk string format."""
@@ -325,7 +325,7 @@ async def handle_command(message, writer):
             elif key in streams.keys() and validate_stream_id(main_id, streams[key][-1]):
                 streams[key].append({"xid":main_id} | temp_dict)
                 response = parser.encode_bulk_string(main_id)
-            elif key not in streams.keys() and validate_stream_id(main_id):
+            elif validate_stream_id(main_id):
                 streams[key] = [{"xid":main_id} | temp_dict]
                 response = parser.encode_bulk_string(main_id)
             else:
@@ -359,7 +359,7 @@ def validate_stream_id(main_id, stream = None):
     print(main_id)
     main_id_ms, main_id_sq = deconstruct_stream_id(main_id)
 
-    if not main_id_ms or not main_id_sq:
+    if main_id_ms is None or main_id_sq is None:
         return False
 
     if main_id_ms == 0 and main_id_sq == 0:

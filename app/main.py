@@ -323,7 +323,7 @@ async def handle_command(message, writer):
             if deconstruct_stream_id(main_id) == (0, 0):
                 response = parser.encode_simple_error("ERR The ID specified in XADD must be greater than 0-0")
 
-            if key in streams.keys():
+            elif key in streams.keys():
                 if validate_stream_id(main_id, streams[key][-1]):
                     streams[key].append({"xid":main_id} | temp_dict)
                     response = parser.encode_bulk_string(main_id)

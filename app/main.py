@@ -1,8 +1,8 @@
 import socket  # noqa: F401
 import asyncio
 from datetime import datetime, time, timedelta
-from . import parser
-#import parser
+#from . import parser
+import parser
 
 def resp_bulk_string(message: str) -> bytes:
     """Convert a string to RESP bulk string format."""
@@ -322,16 +322,17 @@ async def handle_command(message, writer):
 
             if deconstruct_stream_id(main_id) == (0, 0):
                 response = parser.encode_simple_error("ERR The ID specified in XADD must be greater than 0-0")
-            elif key in streams.keys() and validate_stream_id(main_id, streams[key][-1]):
-                streams[key].append({"xid":main_id} | temp_dict)
-                response = parser.encode_bulk_string(main_id)
+
+            if key in streams.keys():
+                if validate_stream_id(main_id, streams[key][-1]):
+                    streams[key].append({"xid":main_id} | temp_dict)
+                    response = parser.encode_bulk_string(main_id)
+                else:
+                    response = parser.encode_simple_error(
+                        "ERR The ID specified in XADD is equal or smaller than the target stream top item")
             elif validate_stream_id(main_id):
                 streams[key] = [{"xid":main_id} | temp_dict]
                 response = parser.encode_bulk_string(main_id)
-            else:
-                print("Invalid main_id")
-                response = parser.encode_simple_error("ERR The ID specified in XADD is equal or smaller than the target stream top item")
-
 
             writer.write(response)
             await writer.drain()
@@ -367,7 +368,7 @@ def validate_stream_id(main_id, stream = None):
 
     if stream:
         last_id_ms, last_id_sq = deconstruct_stream_id(stream["xid"])
-        if not last_id_ms or not last_id_sq:
+        if last_id_ms is None or last_id_sq is None:
             return False
     else:
         return True

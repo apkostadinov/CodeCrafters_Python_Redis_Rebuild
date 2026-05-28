@@ -1,8 +1,8 @@
 import socket  # noqa: F401
 import asyncio
 from datetime import datetime, time, timedelta
-from . import parser
-#import parser
+#from . import parser
+import parser
 
 def resp_bulk_string(message: str) -> bytes:
     """Convert a string to RESP bulk string format."""
@@ -317,20 +317,34 @@ async def handle_command(message, writer):
             main_id = message[2]
             #temp_dict = {x:y for x,y in message[3::2]}
             temp_dict = dict()
+            response = None
             for i in range(3, len(message), 2):
                 temp_dict[message[i]] = message[i + 1]
 
-            if deconstruct_stream_id(main_id) == (0, 0):
+            main_id_ms, main_id_sq = deconstruct_stream_id(main_id)
+
+            if (main_id_ms, main_id_sq) == ('0', '0'):
                 response = parser.encode_simple_error("ERR The ID specified in XADD must be greater than 0-0")
 
-            elif key in streams.keys():
-                if validate_stream_id(main_id, streams[key][-1]):
-                    streams[key].append({"xid":main_id} | temp_dict)
+            if key in streams.keys() and response is None:
+                stream = streams[key][-1]
+
+                if "*" in main_id_ms or "*" in main_id_sq:
+                    main_id_ms, main_id_sq = generate_id_sq(main_id_ms, main_id_sq, stream)
+                    main_id = "-".join([str(main_id_ms), str(main_id_sq)])
+
+                if validate_stream_id(main_id_ms, main_id_sq, stream):
+                    streams[key].append({"xid": main_id} | temp_dict)
                     response = parser.encode_bulk_string(main_id)
                 else:
                     response = parser.encode_simple_error(
                         "ERR The ID specified in XADD is equal or smaller than the target stream top item")
-            elif validate_stream_id(main_id):
+
+            if "*" in main_id_ms or "*" in main_id_sq:
+                main_id_ms, main_id_sq = generate_id_sq(main_id_ms, main_id_sq)
+                main_id = "-".join([str(main_id_ms), str(main_id_sq)])
+
+            if validate_stream_id(main_id_ms, main_id_sq) and response is None:
                 streams[key] = [{"xid":main_id} | temp_dict]
                 response = parser.encode_bulk_string(main_id)
 
@@ -350,24 +364,25 @@ async def main():
 
 def deconstruct_stream_id(stream_id):
     try:
-        id_ms, id_sq = [int(str.strip(x)) for x in stream_id.split("-")]
+        id_ms, id_sq = [str.strip(x) for x in stream_id.split("-")]
     except (ValueError, KeyError):
         print("Proposed ID is invalid")
         return None, None
     return id_ms, id_sq
 
-def validate_stream_id(main_id, stream = None):
-    print(main_id)
-    main_id_ms, main_id_sq = deconstruct_stream_id(main_id)
+def validate_stream_id(main_id_ms, main_id_sq, stream = None):
 
     if main_id_ms is None or main_id_sq is None:
         return False
 
+    main_id_ms, main_id_sq = int(main_id_ms), int(main_id_sq)
+
     if main_id_ms == 0 and main_id_sq == 0:
-        return False
+        return None
 
     if stream:
-        last_id_ms, last_id_sq = deconstruct_stream_id(stream["xid"])
+        last_id_ms, last_id_sq = (int(x) for x in deconstruct_stream_id(stream["xid"]))
+
         if last_id_ms is None or last_id_sq is None:
             return False
     else:
@@ -386,6 +401,24 @@ def validate_stream_id(main_id, stream = None):
             return False
     else:
         return True
+
+def generate_id_sq(main_id_ms, main_id_sq, stream = None):
+    if stream:
+        last_id_ms, last_id_sq = deconstruct_stream_id(stream["xid"])
+    else:
+        last_id_ms, last_id_sq = (None, None)
+
+    if main_id_sq == "*":
+        if last_id_sq:
+            main_id_sq = int(last_id_sq) + 1
+        elif main_id_ms == "*":
+            pass
+        elif main_id_ms == '0':
+            main_id_sq = 1
+        else:
+            raise RespError("generate_id_sq: main_id is invalid. -ERR")
+
+    return main_id_sq, main_id_ms
 
 if __name__ == "__main__":
     str_dict = dict()

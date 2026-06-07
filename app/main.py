@@ -1,8 +1,8 @@
 import socket  # noqa: F401
 import asyncio
 from datetime import datetime, timedelta
-from services import parser
-from services.streams import *
+from .services import parser
+from .services.streams import *
 
 
 def resp_bulk_string(message: str) -> bytes:

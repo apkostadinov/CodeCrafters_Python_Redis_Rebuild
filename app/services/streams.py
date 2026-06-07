@@ -1,8 +1,11 @@
 print(f"Importing {__name__}")
 
 from .exceptions import RespError, IncompleteMessage
+import time
 
 def deconstruct_stream_id(stream_id: str) -> tuple[str | None,str | None]:
+    if stream_id == "*":
+        return "*","*"
     try:
         id_ms, id_sq = [str.strip(x) for x in stream_id.split("-")]
     except (ValueError, KeyError):
@@ -48,6 +51,9 @@ def generate_id_sq(main_id_ms, main_id_sq, stream = None) -> tuple:
     else:
         last_id_ms, last_id_sq = None, None
 
+    if main_id_ms == "*":
+        main_id_ms = round(time.time() * 1000)
+
     if main_id_sq == "*":
         if last_id_sq:
             if last_id_ms == main_id_ms:
@@ -58,6 +64,8 @@ def generate_id_sq(main_id_ms, main_id_sq, stream = None) -> tuple:
                 main_id_sq = "1"
         elif main_id_ms == '0':
             main_id_sq = "1"
+        elif main_id_ms != "0":
+            main_id_sq = "0"
         else:
             raise RespError("generate_id_sq: main_id is invalid. -ERR")
 

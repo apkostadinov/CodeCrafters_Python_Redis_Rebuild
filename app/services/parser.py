@@ -14,14 +14,10 @@
 #         b"~": sets(data),
 #         b">": push(data)
 from typing import Any, Tuple, Optional
-
+from .exceptions import RespError, IncompleteMessage
 CRLF = b"\r\n"
 
-class RespError(Exception):
-    pass
-
-class IncompleteMessage(Exception):
-    pass
+print(f"Importing {__name__}")
 
 def read_line(buf: bytes, i: int) -> Tuple[bytes, int]:
     """

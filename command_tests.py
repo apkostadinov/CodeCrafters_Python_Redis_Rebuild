@@ -1,5 +1,5 @@
 import socket
-import app.parser as parser
+import app.services.parser as parser
 
 HOST = 'localhost'  # server address
 PORT = 6379         # server port
@@ -55,13 +55,13 @@ if __name__ == "__main__":
     # send_redis_command('BLPOP', 'pineapple', '0')
     # send_redis_command('RPUSH', 'pineapple', 'apple')
     # send_redis_command("TYPE", "fruit")
-    # send_redis_command("XADD", "stream_key", "0-0", "foo", "bar")
+    send_redis_command("XADD", "stream_key", "0-0", "foo", "bar")
     send_redis_command("XADD", "stream_key", "0-*", "foo", "bar")
     send_redis_command("XADD", "stream_key", "0-2", "foo", "boo")
     send_redis_command("XADD", "stream_key", "0-*", "foo", "baz")
     send_redis_command("XADD", "stream_key", "0-0", "foo", "baz")
-    # send_redis_command("XADD", "stream_key", "1526919030474-*", "temperature", 36, "humidity", 95)
-    # send_redis_command("XADD", "stream_key", "1526919030474-*", "temperature", 36, "humidity", 95)
+    send_redis_command("XADD", "stream_key", "1526919030474-*", "temperature", 36, "humidity", 95)
+    send_redis_command("XADD", "stream_key", "1526919030474-*", "temperature", 36, "humidity", 95)
     #
     # send_redis_command("XADD","some_key", "1 - 1", "foo", "bar")
     # send_redis_command("XADD","some_key", "0 - 1", "foo", "baz")

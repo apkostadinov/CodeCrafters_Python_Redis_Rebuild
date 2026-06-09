@@ -1,8 +1,8 @@
 import socket  # noqa: F401
 import asyncio
 from datetime import datetime, timedelta
-from .services import parser
-from .services.streams import *
+from services import parser
+from services.streams import *
 
 
 def resp_bulk_string(message: str) -> bytes:
@@ -353,6 +353,15 @@ async def handle_command(message, writer):
 
             writer.write(response)
             await writer.drain()
+
+        case "XRANGE":
+            key = message[1]
+            start = message[2]
+            end = message[3]
+
+            stream = streams[key]
+
+
 
         case _:
             raise RespError("Unknown command returns -ERR")

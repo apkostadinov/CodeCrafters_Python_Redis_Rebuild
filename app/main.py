@@ -1,8 +1,10 @@
 import socket  # noqa: F401
 import asyncio
+from copy import deepcopy
 from datetime import datetime, timedelta
 from services import parser
 from services.streams import *
+from services.exceptions import *
 
 
 def resp_bulk_string(message: str) -> bytes:
@@ -351,15 +353,57 @@ async def handle_command(message, writer):
                 streams[key] = [{"xid":main_id} | temp_dict]
                 response = parser.encode_bulk_string(main_id)
 
+            print(streams)
+
             writer.write(response)
             await writer.drain()
 
         case "XRANGE":
-            key = message[1]
+            key = message[1] if message[1] else None
             start = message[2]
             end = message[3]
+            collection = dict()
 
-            stream = streams[key]
+            stream = deepcopy(streams.get(key, None))
+
+            if not stream:
+                raise StreamNotFound("")
+
+            if "-" in start:
+                start_ms, start_sq = (int(x) for x in deconstruct_stream_id(start))
+            else:
+                start_ms, start_sq = int(start), None
+
+            if "-" in end:
+                end_ms, end_sq = (int(x) for x in deconstruct_stream_id(end))
+            else:
+                end_ms, end_sq = int(end), None
+
+            for item in stream:
+                item_ms, item_sq = (int(x) for x in deconstruct_stream_id(item["xid"]))
+
+                if item_ms < start_ms or item_ms > end_ms:
+                    continue
+
+                if start_sq and item_sq < start_sq:
+                    continue
+
+                if end_sq and item_sq > end_sq:
+                    continue
+
+                item_id = item.pop("xid")
+                temp_list = list()
+
+                for key in item:
+                    temp_list.append(key)
+                    temp_list.append(item[key])
+
+                collection[item_id] = temp_list
+
+            print(collection)
+
+            writer.write(encode_stream(collection))
+            await writer.drain()
 
 
 

@@ -135,6 +135,11 @@ def parser_first(buf: bytes, i=0) -> Any:
     return val, next_i
 
 
+
+def encode_stream(values):
+    #TODO
+    pass
+
 def encode_array(values: list[str|int]):
     returnable = f'*{len(values)}\r\n'.encode("utf-8")
     for var in values:

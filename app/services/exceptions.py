@@ -5,3 +5,6 @@ class RespError(Exception):
 
 class IncompleteMessage(Exception):
     pass
+
+class StreamNotFound(Exception):
+    pass

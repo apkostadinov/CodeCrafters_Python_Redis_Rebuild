@@ -369,10 +369,15 @@ async def handle_command(message, writer):
             if not stream:
                 raise StreamNotFound("")
 
-            if "-" in start:
+            if "-" in start and start != "-":
                 start_ms, start_sq = (int(x) for x in deconstruct_stream_id(start))
             else:
-                start_ms, start_sq = int(start), None
+                if start == "-":
+                    start_ms, start_sq = 0, 0
+                else:
+                    start_ms, start_sq = int(start), None
+
+
 
             if "-" in end:
                 end_ms, end_sq = (int(x) for x in deconstruct_stream_id(end))

@@ -137,16 +137,25 @@ def parser_first(buf: bytes, i=0) -> Any:
 
 
 def encode_stream(values):
-    #TODO
-    pass
+    response = f"*{len(values)}\r\n".encode("utf-8")
 
-def encode_array(values: list[str|int]):
+    for key in values.keys():
+        response += f"*2\r\n".encode("utf-8")
+        response += encode_bulk_string(key)
+        response += encode_array()
+
+
+
+
+def encode_array(values: list[str|int|list]):
     returnable = f'*{len(values)}\r\n'.encode("utf-8")
     for var in values:
         if isinstance(var, int):
             returnable += encode_integer(var)
         elif isinstance(var, str):
             returnable += encode_bulk_string(var)
+        elif isinstance(var, list):
+            returnable += encode_array(var)
     # array_len = len(returnable)
     # returnable.insert(0, f'*{array_len}\r\n')
     return returnable

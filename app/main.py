@@ -2,9 +2,9 @@ import socket  # noqa: F401
 import asyncio
 from copy import deepcopy
 from datetime import datetime, timedelta
-from services import parser
-from services.streams import *
-from services.exceptions import *
+from .services import parser
+from .services.streams import *
+from .services.exceptions import *
 
 
 def resp_bulk_string(message: str) -> bytes:
@@ -362,7 +362,7 @@ async def handle_command(message, writer):
             key = message[1] if message[1] else None
             start = message[2]
             end = message[3]
-            collection = dict()
+            collection = list()
 
             stream = deepcopy(streams.get(key, None))
 
@@ -396,13 +396,13 @@ async def handle_command(message, writer):
 
                 for key in item:
                     temp_list.append(key)
-                    temp_list.append(item[key])
+                    temp_list.append(str(item[key]))
 
-                collection[item_id] = temp_list
+                collection.append([item_id, temp_list])
 
             print(collection)
 
-            writer.write(encode_stream(collection))
+            writer.write(parser.encode_array(collection))
             await writer.drain()
 
 

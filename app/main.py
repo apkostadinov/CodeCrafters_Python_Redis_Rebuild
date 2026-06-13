@@ -381,6 +381,8 @@ async def handle_command(message, writer):
 
             if "-" in end:
                 end_ms, end_sq = (int(x) for x in deconstruct_stream_id(end))
+            elif end == "+":
+                end_ms, end_sq = (int(x) for x in deconstruct_stream_id(stream[-1]["xid"]))
             else:
                 end_ms, end_sq = int(end), None
 

@@ -65,7 +65,7 @@ if __name__ == "__main__":
     send_redis_command("XADD", "stream_key", "1526919030496-*", "temperature", 36, "humidity", 95)
     send_redis_command("XADD", "stream_key", "*", "temperature", 36, "humidity", 95)
     send_redis_command("XRANGE", "stream_key", "1526919030474", "1526919030474")
-    send_redis_command("XRANGE", "stream_key", "-", "1526919030474")
+    send_redis_command("XRANGE", "stream_key", "1526919030474", "+")
 
 
     #

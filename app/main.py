@@ -2,9 +2,9 @@ import socket  # noqa: F401
 import asyncio
 from copy import deepcopy
 from datetime import datetime, timedelta
-from .services import parser
-from .services.streams import *
-from .services.exceptions import *
+from services import parser
+from services.streams import *
+from services.exceptions import *
 
 
 def resp_bulk_string(message: str) -> bytes:
@@ -433,10 +433,10 @@ async def handle_command(message, writer):
             for item in stream:
                 item_ms, item_sq = (int(x) for x in deconstruct_stream_id(item["xid"]))
 
-                if item_ms <= start_ms:
+                if item_ms < start_ms:
                     continue
 
-                if start_sq and item_sq <= start_sq:
+                if start_sq and item_sq < start_sq:
                     continue
 
                 item_id = item.pop("xid")
@@ -448,9 +448,11 @@ async def handle_command(message, writer):
 
                 collection.append([item_id, temp_list])
 
-            print(collection)
 
-            writer.write(parser.encode_array(collection))
+            response = parser.encode_array(collection)
+            print(response)
+
+            writer.write(response)
             await writer.drain()
 
 

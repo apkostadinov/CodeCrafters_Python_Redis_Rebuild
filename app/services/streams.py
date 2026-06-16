@@ -70,3 +70,30 @@ def generate_id_sq(main_id_ms, main_id_sq, stream = None) -> tuple:
             raise RespError("generate_id_sq: main_id is invalid. -ERR")
 
     return main_id_ms,main_id_sq
+
+
+# def flatten_stream_itemd(stream, start, end):
+#     collection = list()
+#
+#     for item in stream:
+#         item_ms, item_sq = (int(x) for x in deconstruct_stream_id(item["xid"]))
+#
+#         if item_ms < start_ms or item_ms > end_ms:
+#             continue
+#
+#         if start_sq and item_sq < start_sq:
+#             continue
+#
+#         if end_sq and item_sq > end_sq:
+#             continue
+#
+#         item_id = item.pop("xid")
+#         temp_list = list()
+#
+#         for key in item:
+#             temp_list.append(key)
+#             temp_list.append(str(item[key]))
+#
+#         collection.append([item_id, temp_list])
+#
+#     return collection

@@ -378,13 +378,13 @@ async def handle_command(message, writer):
                     start_ms, start_sq = int(start), None
 
 
-
             if "-" in end:
                 end_ms, end_sq = (int(x) for x in deconstruct_stream_id(end))
             elif end == "+":
                 end_ms, end_sq = (int(x) for x in deconstruct_stream_id(stream[-1]["xid"]))
             else:
                 end_ms, end_sq = int(end), None
+
 
             for item in stream:
                 item_ms, item_sq = (int(x) for x in deconstruct_stream_id(item["xid"]))
@@ -411,6 +411,48 @@ async def handle_command(message, writer):
 
             writer.write(parser.encode_array(collection))
             await writer.drain()
+
+        case "XREAD":
+            key = message[2] if message[2] else None
+            stream = deepcopy(streams.get(key, None))
+            if not streams:
+                raise StreamNotFound()
+
+            collection = list()
+
+            if len(message) == 4:
+                start = message[3]
+                if "-" in start:
+                    start_ms, start_sq = (int(x) for x in deconstruct_stream_id(start))
+                else:
+                    start_ms, start_sq = int(start), None
+
+            else:
+                pass
+
+            for item in stream:
+                item_ms, item_sq = (int(x) for x in deconstruct_stream_id(item["xid"]))
+
+                if item_ms <= start_ms:
+                    continue
+
+                if start_sq and item_sq <= start_sq:
+                    continue
+
+                item_id = item.pop("xid")
+                temp_list = list()
+
+                for key in item:
+                    temp_list.append(key)
+                    temp_list.append(str(item[key]))
+
+                collection.append([item_id, temp_list])
+
+            print(collection)
+
+            writer.write(parser.encode_array(collection))
+            await writer.drain()
+
 
 
 

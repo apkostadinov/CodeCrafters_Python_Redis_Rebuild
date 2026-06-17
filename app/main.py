@@ -446,7 +446,7 @@ async def handle_command(message, writer):
                     temp_list.append(i)
                     temp_list.append(str(item[i]))
 
-                collection.append([key,[item_id, temp_list]])
+                collection.append([key,[[item_id, temp_list]]])
 
 
             response = parser.encode_array(collection)

@@ -442,9 +442,9 @@ async def handle_command(message, writer):
                 item_id = item.pop("xid")
                 temp_list = list()
 
-                for key in item:
-                    temp_list.append(key)
-                    temp_list.append(str(item[key]))
+                for i in item:
+                    temp_list.append(i)
+                    temp_list.append(str(item[i]))
 
                 collection.append([key,[item_id, temp_list]])
 

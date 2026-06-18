@@ -416,25 +416,24 @@ async def handle_command(message, writer):
 
         case "XREAD":
             pairs = dict()
-            for i in range(len(message[2:])//2):
-                pairs[message[i]] = message[neg(i-1)]
+            unprocessed = deepcopy(message[2:])
+
+            for i in range(len(unprocessed)//2):
+                value_index = (len(unprocessed)//2)+i
+                pairs[unprocessed[i]] = unprocessed[value_index]
+
+            collection = list()
 
             for key in pairs.keys():
                 stream = deepcopy(streams.get(key, None))
                 if not streams:
                     raise StreamNotFound()
 
-                collection = list()
-
-                if len(message) == 4:
-                    start = pairs[key]
-                    if "-" in start:
-                        start_ms, start_sq = (int(x) for x in deconstruct_stream_id(start))
-                    else:
-                        start_ms, start_sq = int(start), None
-
+                start = pairs[key]
+                if "-" in start:
+                    start_ms, start_sq = (int(x) for x in deconstruct_stream_id(start))
                 else:
-                    pass
+                    start_ms, start_sq = int(start), None
 
                 for item in stream:
                     item_ms, item_sq = (int(x) for x in deconstruct_stream_id(item["xid"]))

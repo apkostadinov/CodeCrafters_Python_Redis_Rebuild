@@ -75,3 +75,7 @@ if __name__ == "__main__":
     # send_redis_command("XADD","some_key", "0 - 0", "foo", "baz")
     send_redis_command('XADD', 'grape', '0-1', 'temperature', '52')
     send_redis_command('XREAD', 'streams', 'grape', '0-0')
+
+    send_redis_command('XADD', 'stream_key', '0-1', 'temperature', '95')
+    send_redis_command('XADD', 'other_stream_key', '0-2', 'humidity', '97')
+    send_redis_command('XREAD', 'streams', 'stream_key', 'other_stream_key', '0-1', '0-2')

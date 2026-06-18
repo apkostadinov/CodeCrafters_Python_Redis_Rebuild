@@ -417,7 +417,7 @@ async def handle_command(message, writer):
         case "XREAD":
             pairs = dict()
             for i in range(len(message[2:])//2):
-                pairs[message[i]] = neg(message[i-1])
+                pairs[message[i]] = message[neg(i-1)]
 
             for key in pairs.keys():
                 stream = deepcopy(streams.get(key, None))

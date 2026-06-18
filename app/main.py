@@ -2,6 +2,8 @@ import socket  # noqa: F401
 import asyncio
 from copy import deepcopy
 from datetime import datetime, timedelta
+from operator import neg
+
 from .services import parser
 from .services.streams import *
 from .services.exceptions import *
@@ -413,40 +415,44 @@ async def handle_command(message, writer):
             await writer.drain()
 
         case "XREAD":
-            key = message[2] if message[2] else None
-            stream = deepcopy(streams.get(key, None))
-            if not streams:
-                raise StreamNotFound()
+            pairs = dict()
+            for i in range(len(message[2:])//2):
+                pairs[message[i]] = neg(message[i-1])
 
-            collection = list()
+            for key in pairs.keys():
+                stream = deepcopy(streams.get(key, None))
+                if not streams:
+                    raise StreamNotFound()
 
-            if len(message) == 4:
-                start = message[3]
-                if "-" in start:
-                    start_ms, start_sq = (int(x) for x in deconstruct_stream_id(start))
+                collection = list()
+
+                if len(message) == 4:
+                    start = pairs[key]
+                    if "-" in start:
+                        start_ms, start_sq = (int(x) for x in deconstruct_stream_id(start))
+                    else:
+                        start_ms, start_sq = int(start), None
+
                 else:
-                    start_ms, start_sq = int(start), None
+                    pass
 
-            else:
-                pass
+                for item in stream:
+                    item_ms, item_sq = (int(x) for x in deconstruct_stream_id(item["xid"]))
 
-            for item in stream:
-                item_ms, item_sq = (int(x) for x in deconstruct_stream_id(item["xid"]))
+                    if item_ms < start_ms:
+                        continue
 
-                if item_ms < start_ms:
-                    continue
+                    if start_sq and item_sq < start_sq:
+                        continue
 
-                if start_sq and item_sq < start_sq:
-                    continue
+                    item_id = item.pop("xid")
+                    temp_list = list()
 
-                item_id = item.pop("xid")
-                temp_list = list()
+                    for i in item:
+                        temp_list.append(i)
+                        temp_list.append(str(item[i]))
 
-                for i in item:
-                    temp_list.append(i)
-                    temp_list.append(str(item[i]))
-
-                collection.append([key,[[item_id, temp_list]]])
+                    collection.append([key,[[item_id, temp_list]]])
 
 
             response = parser.encode_array(collection)

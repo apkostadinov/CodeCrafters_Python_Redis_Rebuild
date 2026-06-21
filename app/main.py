@@ -440,7 +440,7 @@ async def handle_command(message, writer):
                 timeout_ms = int(message[2])
 
                 collection = xread_extraction(streams, pairs)
-                print(collection)
+
                 if not collection:
 
                     loop = asyncio.get_event_loop()
@@ -450,10 +450,11 @@ async def handle_command(message, writer):
 
                     try:
                         if timeout_ms == 0:
-                            value = await future
+                            await future
                         else:
-                            value = await asyncio.wait_for(future, timeout_ms)
-                        streams[key] = value
+                            await asyncio.wait_for(future, timeout_ms)
+                        # streams[key] = value
+                        collection = xread_extraction(streams, pairs)
 
                     except asyncio.TimeoutError:
                         waiting_clients[key].remove(future)

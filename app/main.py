@@ -477,7 +477,7 @@ async def handle_command(message, writer):
                     if item_ms < start_ms:
                         continue
 
-                    if start_sq and item_sq < start_sq:
+                    if start_sq and item_sq <= start_sq:
                         continue
 
                     item_id = item.pop("xid")

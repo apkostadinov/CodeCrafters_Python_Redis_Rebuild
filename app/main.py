@@ -440,7 +440,7 @@ async def handle_command(message, writer):
                 timeout_ms = int(message[2])
 
                 collection = xread_extraction(streams, pairs)
-
+                print(collection)
                 if not collection:
 
                     loop = asyncio.get_event_loop()
@@ -496,8 +496,11 @@ async def handle_command(message, writer):
             #
             #         collection.append([key,[[item_id, temp_list]]])
 
+            if collection:
+                response = parser.encode_array(collection)
+            else:
+                response = b"*-1\r\n"
 
-            response = parser.encode_array(collection)
             print(response)
 
             writer.write(response)

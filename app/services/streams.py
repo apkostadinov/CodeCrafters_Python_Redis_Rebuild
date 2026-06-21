@@ -107,8 +107,8 @@ def xread_extraction(streams, pairs):
 
     for key in pairs.keys():
         stream = deepcopy(streams.get(key, None))
-        if not streams:
-            raise StreamNotFound()
+        if not stream:
+            return None
 
         start = pairs[key]
         if "-" in start:

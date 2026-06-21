@@ -1,7 +1,11 @@
+from copy import deepcopy
+
 print(f"Importing {__name__}")
 
-from .exceptions import RespError, IncompleteMessage
+from .exceptions import RespError, IncompleteMessage, StreamNotFound
 import time
+from copy import deepcopy
+
 
 def deconstruct_stream_id(stream_id: str) -> tuple[str | None,str | None]:
     if stream_id == "*":
@@ -97,3 +101,37 @@ def generate_id_sq(main_id_ms, main_id_sq, stream = None) -> tuple:
 #         collection.append([item_id, temp_list])
 #
 #     return collection
+
+def xread_extraction(streams, pairs):
+    collection = list()
+
+    for key in pairs.keys():
+        stream = deepcopy(streams.get(key, None))
+        if not streams:
+            raise StreamNotFound()
+
+        start = pairs[key]
+        if "-" in start:
+            start_ms, start_sq = (int(x) for x in deconstruct_stream_id(start))
+        else:
+            start_ms, start_sq = int(start), None
+
+        for item in stream:
+            item_ms, item_sq = (int(x) for x in deconstruct_stream_id(item["xid"]))
+
+            if item_ms < start_ms:
+                continue
+
+            if start_sq and item_sq <= start_sq:
+                continue
+
+            item_id = item.pop("xid")
+            temp_list = list()
+
+            for i in item:
+                temp_list.append(i)
+                temp_list.append(str(item[i]))
+
+            collection.append([key, [[item_id, temp_list]]])
+
+    return collection if len(collection)>0 else None

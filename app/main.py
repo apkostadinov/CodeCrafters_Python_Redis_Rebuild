@@ -431,63 +431,70 @@ async def handle_command(message, writer):
                     value_index = (len(unprocessed) // 2) + i
                     pairs[unprocessed[i]] = unprocessed[value_index]
 
+                collection = xread_extraction(streams, pairs)
+
             elif message[1].upper() == "BLOCK":
+
                 key = message[4]
                 pairs[key] = message[5]
                 timeout_ms = int(message[2])
 
-                loop = asyncio.get_event_loop()
-                future = loop.create_future()
+                collection = xread_extraction(streams, pairs)
 
-                waiting_clients.setdefault(key, []).append(future)
+                if not collection:
 
-                try:
-                    if timeout_ms == 0:
-                        value = await future
-                    else:
-                        value = await asyncio.wait_for(future, timeout_ms)
-                    streams[key] = value
+                    loop = asyncio.get_event_loop()
+                    future = loop.create_future()
 
-                except asyncio.TimeoutError:
-                    waiting_clients[key].remove(future)
-                    writer.write(b"*-1\r\n")
-                    await writer.drain()
-                    return
+                    waiting_clients.setdefault(key, []).append(future)
+
+                    try:
+                        if timeout_ms == 0:
+                            value = await future
+                        else:
+                            value = await asyncio.wait_for(future, timeout_ms)
+                        streams[key] = value
+
+                    except asyncio.TimeoutError:
+                        waiting_clients[key].remove(future)
+                        writer.write(b"*-1\r\n")
+                        await writer.drain()
+                        return
 
             else:
                 raise RespError("Malformed command.")
 
 
-            collection = list()
-
-            for key in pairs.keys():
-                stream = deepcopy(streams.get(key, None))
-                if not streams:
-                    raise StreamNotFound()
-
-                start = pairs[key]
-                if "-" in start:
-                    start_ms, start_sq = (int(x) for x in deconstruct_stream_id(start))
-                else:
-                    start_ms, start_sq = int(start), None
-
-                for item in stream:
-                    item_ms, item_sq = (int(x) for x in deconstruct_stream_id(item["xid"]))
-
-                    if item_ms < start_ms:
-                        continue
-
-                    if start_sq and item_sq <= start_sq:
-                        continue
-
-                    item_id = item.pop("xid")
-                    temp_list = list()
-
-                    for i in item:
-                        temp_list.append(i)
-                        temp_list.append(str(item[i]))
-
-                    collection.append([key,[[item_id, temp_list]]])
+            # collection = list()
+            #
+            # for key in pairs.keys():
+            #     stream = deepcopy(streams.get(key, None))
+            #     if not streams:
+            #         raise StreamNotFound()
+            #
+            #     start = pairs[key]
+            #     if "-" in start:
+            #         start_ms, start_sq = (int(x) for x in deconstruct_stream_id(start))
+            #     else:
+            #         start_ms, start_sq = int(start), None
+            #
+            #     for item in stream:
+            #         item_ms, item_sq = (int(x) for x in deconstruct_stream_id(item["xid"]))
+            #
+            #         if item_ms < start_ms:
+            #             continue
+            #
+            #         if start_sq and item_sq <= start_sq:
+            #             continue
+            #
+            #         item_id = item.pop("xid")
+            #         temp_list = list()
+            #
+            #         for i in item:
+            #             temp_list.append(i)
+            #             temp_list.append(str(item[i]))
+            #
+            #         collection.append([key,[[item_id, temp_list]]])
 
 
             response = parser.encode_array(collection)

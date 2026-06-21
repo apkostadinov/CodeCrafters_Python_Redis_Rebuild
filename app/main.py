@@ -4,9 +4,9 @@ from copy import deepcopy
 from datetime import datetime, timedelta
 from operator import neg
 
-from .services import parser
-from .services.streams import *
-from .services.exceptions import *
+from services import parser
+from services.streams import *
+from services.exceptions import *
 
 
 def resp_bulk_string(message: str) -> bytes:
@@ -283,6 +283,7 @@ async def handle_command(message, writer):
                 response = parser.encode_array([key, value])
                 writer.write(response)
                 await writer.drain()
+                return
 
             loop = asyncio.get_event_loop()
             future = loop.create_future()
@@ -321,6 +322,7 @@ async def handle_command(message, writer):
             main_id = message[2]
             temp_dict = dict()
             response = None
+
             for i in range(3, len(message), 2):
                 temp_dict[message[i]] = message[i + 1]
 
@@ -356,6 +358,12 @@ async def handle_command(message, writer):
                 response = parser.encode_bulk_string(main_id)
 
             print(streams)
+
+            if key in waiting_clients and waiting_clients[key]:
+                future = waiting_clients[key].pop(0)
+                if not future.done():
+                    value = streams[key]
+                    future.set_result(value)
 
             writer.write(response)
             await writer.drain()
@@ -416,11 +424,39 @@ async def handle_command(message, writer):
 
         case "XREAD":
             pairs = dict()
-            unprocessed = deepcopy(message[2:])
 
-            for i in range(len(unprocessed)//2):
-                value_index = (len(unprocessed)//2)+i
-                pairs[unprocessed[i]] = unprocessed[value_index]
+            if message[1].upper() == "STREAMS":
+                unprocessed = deepcopy(message[2:])
+                for i in range(len(unprocessed) // 2):
+                    value_index = (len(unprocessed) // 2) + i
+                    pairs[unprocessed[i]] = unprocessed[value_index]
+
+            elif message[1].upper() == "BLOCK":
+                key = message[4]
+                pairs[key] = message[5]
+                timeout_ms = int(message[2])
+
+                loop = asyncio.get_event_loop()
+                future = loop.create_future()
+
+                waiting_clients.setdefault(key, []).append(future)
+
+                try:
+                    if timeout_ms == 0:
+                        value = await future
+                    else:
+                        value = await asyncio.wait_for(future, timeout_ms)
+                    streams[key] = value
+
+                except asyncio.TimeoutError:
+                    waiting_clients[key].remove(future)
+                    writer.write(b"*-1\r\n")
+                    await writer.drain()
+                    return
+
+            else:
+                raise RespError("Malformed command.")
+
 
             collection = list()
 
@@ -459,9 +495,7 @@ async def handle_command(message, writer):
 
             writer.write(response)
             await writer.drain()
-
-
-
+            return
 
         case _:
             raise RespError("Unknown command returns -ERR")

@@ -1,30 +1,5 @@
-import socket
-import app.services.parser as parser
+from testing_utils import *
 
-HOST = 'localhost'  # server address
-PORT = 6379         # server port
-
-def encode_command(*parts: str) -> bytes:
-    out = f"*{len(parts)}\r\n".encode("utf-8")
-    for part in parts:
-        if isinstance(part, str):
-            payload = part.encode("utf-8")
-            out += f"${len(payload)}\r\n".encode("utf-8")
-            out += payload + b"\r\n"
-            continue
-        else:
-            payload = part
-            out += f':{payload}\r\n'.encode("utf-8")
-    return out
-
-def send_redis_command(*parts: str):
-    resp = encode_command(*parts)
-    with socket.create_connection((HOST, PORT)) as sock:
-        print(f"Sending: {resp}")
-        sock.sendall(resp)
-        data = sock.recv(1024)
-        print(f"Received raw: {data}")
-        print(f"Received: {data} -> {parser.parser_first(data)}")
 
 
 if __name__ == "__main__":
@@ -73,9 +48,12 @@ if __name__ == "__main__":
     # send_redis_command("XADD","some_key", "1 - 1", "foo", "bar")
     # send_redis_command("XADD","some_key", "0 - 1", "foo", "baz")
     # send_redis_command("XADD","some_key", "0 - 0", "foo", "baz")
-    send_redis_command('XADD', 'grape', '0-1', 'temperature', '52')
-    send_redis_command('XREAD', 'streams', 'grape', '0-0')
+    # send_redis_command('XADD', 'grape', '0-1', 'temperature', '52')
+    # send_redis_command('XREAD', 'streams', 'grape', '0-0')
+    #
+    # send_redis_command('XADD', 'stream_key', '0-1', 'temperature', '95')
+    # send_redis_command('XADD', 'other_stream_key', '0-2', 'humidity', '97')
+    # send_redis_command('XREAD', 'streams', 'stream_key', 'other_stream_key', '0-1', '0-2')
 
-    send_redis_command('XADD', 'stream_key', '0-1', 'temperature', '95')
-    send_redis_command('XADD', 'other_stream_key', '0-2', 'humidity', '97')
-    send_redis_command('XREAD', 'streams', 'stream_key', 'other_stream_key', '0-1', '0-2')
+    send_redis_command('XADD', 'orange', '0-1', 'temperature', '52')
+    send_redis_command('XREAD', 'streams', 'orange', '0-0')

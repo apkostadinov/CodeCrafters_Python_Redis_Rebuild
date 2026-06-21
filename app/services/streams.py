@@ -72,7 +72,7 @@ def generate_id_sq(main_id_ms, main_id_sq, stream = None) -> tuple:
     return main_id_ms,main_id_sq
 
 
-# def flatten_stream_itemd(stream, start, end):
+# def flatten_stream_item(stream, start, end):
 #     collection = list()
 #
 #     for item in stream:

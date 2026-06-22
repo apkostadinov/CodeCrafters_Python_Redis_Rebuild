@@ -58,23 +58,26 @@ def generate_id_sq(main_id_ms, main_id_sq, stream = None) -> tuple:
     if main_id_ms == "*":
         main_id_ms = round(time.time() * 1000)
 
+    main_id_ms = int(main_id_ms)
+
     if main_id_sq == "*":
         if last_id_sq:
             last_id_ms = int(last_id_ms)
+            last_id_sq = int(last_id_sq)
             if last_id_ms == main_id_ms:
-                main_id_sq = str(int(last_id_sq) + 1)
-            elif main_id_ms != "0":
+                main_id_sq = str(last_id_sq + 1)
+            elif main_id_ms != 0:
                 main_id_sq = "0"
             else:
                 main_id_sq = "1"
-        elif main_id_ms == '0':
+        elif main_id_ms == 0:
             main_id_sq = "1"
-        elif main_id_ms != "0":
+        elif main_id_ms != 0:
             main_id_sq = "0"
         else:
             raise RespError("generate_id_sq: main_id is invalid. -ERR")
 
-    return main_id_ms,main_id_sq
+    return str(main_id_ms), main_id_sq
 
 
 # def flatten_stream_item(stream, start, end):

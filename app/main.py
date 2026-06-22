@@ -4,9 +4,9 @@ from copy import deepcopy
 from datetime import datetime, timedelta
 from operator import neg
 
-from .services import parser
-from .services.streams import *
-from .services.exceptions import *
+from services import parser
+from services.streams import *
+from services.exceptions import *
 
 
 def resp_bulk_string(message: str) -> bytes:

@@ -437,7 +437,7 @@ async def handle_command(message, writer):
 
                 key = message[4]
                 pairs[key] = message[5]
-                timeout_ms = int(message[2])
+                timeout_ms = int(message[2])/1000
 
                 collection = xread_extraction(streams, pairs)
 

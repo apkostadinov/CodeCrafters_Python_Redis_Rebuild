@@ -506,7 +506,6 @@ async def handle_command(message, writer):
 
             writer.write(response)
             await writer.drain()
-            return
 
         case _:
             raise RespError("Unknown command returns -ERR")

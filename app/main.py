@@ -436,7 +436,15 @@ async def handle_command(message, writer):
             elif message[1].upper() == "BLOCK":
 
                 key = message[4]
-                pairs[key] = message[5]
+                if message[5] and message[5] == "$":
+                    item = streams.get(key, None)
+                    if item:
+                        xid = item[-1]['xid']
+                    else:
+                        xid = "0-0"
+                else:
+                    xid = message[5]
+                pairs[key] = xid
                 timeout_ms = int(message[2])/1000
 
                 collection = xread_extraction(streams, pairs)

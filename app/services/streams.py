@@ -60,6 +60,7 @@ def generate_id_sq(main_id_ms, main_id_sq, stream = None) -> tuple:
 
     if main_id_sq == "*":
         if last_id_sq:
+            last_id_ms = int(last_id_ms)
             if last_id_ms == main_id_ms:
                 main_id_sq = str(int(last_id_sq) + 1)
             elif main_id_ms != "0":
@@ -103,12 +104,12 @@ def generate_id_sq(main_id_ms, main_id_sq, stream = None) -> tuple:
 #     return collection
 
 def xread_extraction(streams, pairs):
-    collection = list()
+    collection = dict()
 
     for key in pairs.keys():
         stream = deepcopy(streams.get(key, None))
         if not stream:
-            return None
+            continue
 
         start = pairs[key]
         if "-" in start:
@@ -132,6 +133,14 @@ def xread_extraction(streams, pairs):
                 temp_list.append(i)
                 temp_list.append(str(item[i]))
 
-            collection.append([key, [[item_id, temp_list]]])
+            if key not in collection.keys():
+                collection[key] = [[item_id, temp_list]]
+            else:
+                collection[key].append([item_id, temp_list])
 
-    return collection if len(collection)>0 else None
+    listed = list()
+
+    for key in collection:
+        listed.append([key,collection[key]])
+
+    return listed if len(listed)>0 else None

@@ -4,9 +4,9 @@ from copy import deepcopy
 from datetime import datetime, timedelta
 from operator import neg
 
-from .services import parser
-from .services.streams import *
-from .services.exceptions import *
+from services import parser
+from services.streams import *
+from services.exceptions import *
 
 
 def resp_bulk_string(message: str) -> bytes:
@@ -437,7 +437,7 @@ async def handle_command(message, writer):
 
                 key = message[4]
                 pairs[key] = message[5]
-                timeout_ms = int(message[2])
+                timeout_ms = int(message[2])/1000
 
                 collection = xread_extraction(streams, pairs)
 

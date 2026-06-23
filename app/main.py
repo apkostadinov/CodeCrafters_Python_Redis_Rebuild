@@ -119,6 +119,26 @@ async def handle_command(message, writer):
             print(f'SET - Key: {message[1]} Value: {str_dict[message[1]]}\n'
                   f'Sent: {response}')
 
+        case "INCR":
+            key = message[1]
+            if key in str_dict.keys():
+                try:
+                    value = int(str_dict[key]) + 1
+                    str_dict[key]=str(value)
+                except (ValueError,) as e:
+                    print(f"-ERR {e}")
+            else:
+                raise RespError("Invalid format for SET command")
+
+            response = parser.encode_integer(value) if value else None
+
+            if response:
+                writer.write(response)
+            else:
+                pass
+
+            await writer.drain()
+
         case "GET":
             value = b'$-1\r\n'
             if message[1]:

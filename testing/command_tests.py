@@ -54,7 +54,11 @@ if __name__ == "__main__":
     # send_redis_command('XADD', 'stream_key', '0-1', 'temperature', '95')
     # send_redis_command('XADD', 'other_stream_key', '0-2', 'humidity', '97')
     # send_redis_command('XREAD', 'streams', 'stream_key', 'other_stream_key', '0-1', '0-2')
+    #
+    # send_redis_command('XADD', 'orange', '0-1', 'temperature', '52')
+    # send_redis_command('XREAD', 'streams', 'orange', '0-0')
+    # send_redis_command('XADD', 'orange', '0-2', 'humidity', '73')
 
-    send_redis_command('XADD', 'orange', '0-1', 'temperature', '52')
-    send_redis_command('XREAD', 'streams', 'orange', '0-0')
-    send_redis_command('XADD', 'orange', '0-2', 'humidity', '73')
+    send_redis_command("SET", "fruit", "0")
+    send_redis_command("INCR", "fruit")
+    send_redis_command("GET", "fruit")

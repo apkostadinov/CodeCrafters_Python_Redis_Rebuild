@@ -125,8 +125,11 @@ async def handle_command(message, writer):
                 try:
                     value = int(str_dict[key]) + 1
                     str_dict[key]=str(value)
-                except (ValueError,) as e:
-                    print(f"-ERR {e}")
+                except Exception as e:
+                    response = parser.encode_simple_error("ERR value is not an integer or out of range")
+                    writer.write(response)
+                    await writer.drain()
+                    return
             else:
                 value = 1
                 str_dict[key] = "1"

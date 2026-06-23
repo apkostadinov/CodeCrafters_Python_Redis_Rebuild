@@ -59,6 +59,6 @@ if __name__ == "__main__":
     # send_redis_command('XREAD', 'streams', 'orange', '0-0')
     # send_redis_command('XADD', 'orange', '0-2', 'humidity', '73')
 
-    send_redis_command("SET", "fruit", "0")
+    send_redis_command("SET", "fruit", "xyz")
     send_redis_command("INCR", "fruit")
     send_redis_command("GET", "fruit")

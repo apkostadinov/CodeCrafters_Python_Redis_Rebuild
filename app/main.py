@@ -128,7 +128,8 @@ async def handle_command(message, writer):
                 except (ValueError,) as e:
                     print(f"-ERR {e}")
             else:
-                raise RespError("Invalid format for SET command")
+                value = 1
+                str_dict[key] = "1"
 
             response = parser.encode_integer(value) if value else None
 

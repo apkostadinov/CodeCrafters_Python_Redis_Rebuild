@@ -24,3 +24,13 @@ def send_redis_command(*parts: str):
         data = sock.recv(1024)
         print(f"Received raw: {data}")
         #print(f"Received: {data} -> {parser.parser_first(data)}")
+
+def send_redis_command_contd(*parts: str):
+
+    with socket.create_connection((HOST, PORT)) as sock:
+        for item in parts:
+            message = encode_command(*item)
+            print(f"Sending: {message}")
+            sock.sendall(message)
+            data = sock.recv(1024)
+            print(f"Received raw: {data}")

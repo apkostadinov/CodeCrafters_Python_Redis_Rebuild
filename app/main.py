@@ -1,25 +1,14 @@
 import socket  # noqa: F401
 import asyncio
-from copy import deepcopy
 from datetime import datetime, timedelta
-from operator import neg
 
-from .services import parser
-from .services.streams import *
-from .services.exceptions import *
-
-
-def resp_bulk_string(message: str) -> bytes:
-    """Convert a string to RESP bulk string format."""
-    if len(message) >= 1:
-        return f"${len(message)}\r\n{message}\r\n".encode("utf-8")
-    else:
-        return f'$""\r\n'.encode("utf-8")
-
-class RespError(Exception):
-    pass
+from services import parser
+from services.streams import *
+from services.exceptions import *
+from services.classes import *
 
 async def handle_client(reader, writer):
+    state = ClientState()
     address = writer.get_extra_info("peername")
     print(f'Connected by {address}')
 
@@ -36,7 +25,7 @@ async def handle_client(reader, writer):
                     break
 
                 buffer = buffer[consumed:]
-                await handle_command(message, writer)
+                await handle_command(message, writer, state)
 
             if data == b'':
                 # True disconnect — still break
@@ -57,7 +46,6 @@ async def handle_client(reader, writer):
             print(f'Received: {data} from {address}\n'
                   f'Decoded: {message}')
 
-
     except ConnectionResetError:
         print(f'Connection forcibly closed by {address}')
 
@@ -66,8 +54,15 @@ async def handle_client(reader, writer):
         await writer.wait_closed()
         print(f'Connection closed by client on address {address}')
 
-async def handle_command(message, writer):
+
+async def handle_command(message, writer, state):
     command = message[0]
+
+    if state.is_multi and command != "EXEC":
+        state.tx_queue.append(message)
+        writer.write(parser.encode_bulk_string("QUEUED"))
+        await writer.drain()
+        return
 
     match command:
 
@@ -84,14 +79,12 @@ async def handle_command(message, writer):
             for i in range(len(message)):
                 if message[i].upper() == "ECHO" and message[i + 1]:
                     print(message[i + 1])
-                    writer.write(resp_bulk_string(message[i + 1]))
+                    writer.write(parser.encode_bulk_string(message[i + 1]))
                     await writer.drain()
                     print(f'Sent: {message[i + 1]}')
                 else:
                     break
-                # if message[i+1] == '':
-                #     writer.write(b"+''\r\n")
-                #     await writer.drain()
+
             else:
                 writer.write(b'+""\r\n')
                 await writer.drain()
@@ -143,6 +136,17 @@ async def handle_command(message, writer):
 
             await writer.drain()
 
+        case "MULTI":
+            state.is_multi = True
+            writer.write(parser.encode_bulk_string("OK"))
+            await writer.drain()
+
+        case "EXEC":
+            state.is_multi = False
+            while len(state.tx_queue) > 0:
+                message = state.tx_queue.pop(0)
+                await handle_command(message, writer, state)
+
         case "GET":
             value = b'$-1\r\n'
             if message[1]:
@@ -161,7 +165,7 @@ async def handle_command(message, writer):
                 if isinstance(value, list) and len(value) > 1:
                     value = parser.encode_array(value)
                 else:
-                    value = resp_bulk_string(value)
+                    value = parser.encode_bulk_string(value)
             else:
                 value = b'$-1\r\n'
             writer.write(value)
@@ -174,8 +178,8 @@ async def handle_command(message, writer):
             count_added = 0
 
             for value in values:
-                if key in waiting_clients and waiting_clients[key]:
-                    future = waiting_clients[key].pop(0)
+                if key in waiters["list"] and waiters["list"][key]:
+                    future = waiters["list"][key].pop(0)
                     if not future.done():
                         future.set_result(value)
                     count_added += 1
@@ -184,7 +188,7 @@ async def handle_command(message, writer):
                     count_added += 1
 
             current_len = len(working_dict.get(key, [])) + (
-                0 if key not in waiting_clients else 0
+                0 if key not in waiters["list"] else 0
             )
 
             writer.write(parser.encode_integer(current_len if current_len else count_added))
@@ -243,8 +247,8 @@ async def handle_command(message, writer):
             else:
                 working_dict[key] = message[len(message):1:-1]
 
-            if key in waiting_clients and waiting_clients[key]:
-                future = waiting_clients[key].pop(0)
+            if key in waiters["list"] and waiters["list"][key]:
+                future = waiters["list"][key].pop(0)
                 if not future.done():
                     value = working_dict[key].pop(0)
                     future.set_result(value)
@@ -312,7 +316,7 @@ async def handle_command(message, writer):
             loop = asyncio.get_event_loop()
             future = loop.create_future()
 
-            waiting_clients.setdefault(key, []).append(future)
+            waiters["list"].setdefault(key, []).append(future)
 
             try:
                 if timeout == 0:
@@ -323,7 +327,7 @@ async def handle_command(message, writer):
                 await writer.drain()
 
             except asyncio.TimeoutError:
-                waiting_clients[key].remove(future)
+                waiters["list"][key].remove(future)
                 writer.write(b"*-1\r\n")
                 await writer.drain()
 
@@ -383,8 +387,8 @@ async def handle_command(message, writer):
 
             print(streams)
 
-            if key in waiting_clients and waiting_clients[key]:
-                future = waiting_clients[key].pop(0)
+            if key in waiters["stream"] and waiters["stream"][key]:
+                future = waiters["stream"][key].pop(0)
                 if not future.done():
                     value = streams[key]
                     future.set_result(value)
@@ -478,7 +482,7 @@ async def handle_command(message, writer):
                     loop = asyncio.get_event_loop()
                     future = loop.create_future()
 
-                    waiting_clients.setdefault(key, []).append(future)
+                    waiters["stream"].setdefault(key, []).append(future)
 
                     try:
                         if timeout_ms == 0:
@@ -489,7 +493,7 @@ async def handle_command(message, writer):
                         collection = xread_extraction(streams, pairs)
 
                     except asyncio.TimeoutError:
-                        waiting_clients[key].remove(future)
+                        waiters["stream"][key].remove(future)
                         writer.write(b"*-1\r\n")
                         await writer.drain()
                         return
@@ -545,7 +549,7 @@ async def handle_command(message, writer):
 
 async def main():
     server = await asyncio.start_server(handle_client, "localhost", 6379)
-    print("Server created")
+    print("Server created at localhost:6379")
 
     async with server:
         await server.serve_forever()
@@ -555,7 +559,8 @@ if __name__ == "__main__":
     str_dict = dict()
     str_timing_dict = dict()
     working_dict = dict()
-    waiting_clients = dict()
+    waiters = {"list":{},"stream":{}}
     streams = dict()
+    transactions = list()
     asyncio.run(main())
     #main()

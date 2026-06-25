@@ -4,12 +4,12 @@ from testing_utils import *
 
 if __name__ == "__main__":
     # print(parser.parser_first(b'*3\r\n$3\r\nSET\r\n$9\r\nblueberry\r\n$9\r\nraspberry\r\n'))
-    # send_redis_command("PING")
-    # send_redis_command("PING")
-    # send_redis_command("ECHO", "hello")
-    # send_redis_command("SET", "fruit", "apple")
-    # send_redis_command("GET", "fruit")
-    # send_redis_command("GET", "vegetable")
+    send_redis_command("PING")
+    send_redis_command("PING")
+    send_redis_command("ECHO", "hello")
+    send_redis_command("SET", "fruit", "apple")
+    send_redis_command("GET", "fruit")
+    send_redis_command("GET", "vegetable")
     # send_redis_command("RPUSH", "vegetable", "tomato", "cucumber", "potato")
     # send_redis_command("RPUSH", "fruit", "cherry", "pineapple", "strawberry")
     # send_redis_command("LRANGE","vegetable", 1, 2)
@@ -21,7 +21,7 @@ if __name__ == "__main__":
     # send_redis_command("RPUSH", "list_key", "a","b","c","d","e")
     # send_redis_command("LRANGE", "list_key", -2, -1)
     # send_redis_command("LPUSH", "list_key", "c")
-    # send_redis_command("LPUSH", "li    # send_redis_command("SET", "fruit", "apple")
+    # send_redis_command("SET", "fruit", "apple")
     # send_redis_command("GET", "fruit")
     # send_redis_command("GET", "vegetable")
     # send_redis_command("RPUSH", "vegetable", "tomato", "cucumber", "potato")
@@ -43,7 +43,7 @@ if __name__ == "__main__":
     # send_redis_command('BLPOP', 'pineapple', '0')
     # send_redis_command('BLPOP', 'pineapple', '0')
     # send_redis_command('RPUSH', 'pineapple', 'apple')
-    # send_redis_command("TYPE", "fruit")st_key", "b", "a")
+    # send_redis_command("TYPE", "fruit")
     # send_redis_command("LRANGE","list_key",0, - 1)
     # send_redis_command("LLEN", "list_key")
     # send_redis_command('RPUSH', 'mango', 'apple', 'orange', 'mango', 'strawberry', 'blueberry', 'banana', 'raspberry')
@@ -52,7 +52,7 @@ if __name__ == "__main__":
     # send_redis_command('BLPOP', 'pineapple', '0')
     # send_redis_command('RPUSH', 'pineapple', 'apple')
     # send_redis_command("TYPE", "fruit")
-
+    #
     # send_redis_command("XRANGE", "stream_key", "1526919030474", "1526919030474")
     # send_redis_command("XRANGE", "stream_key", "1526919030474", "+")    # send_redis_command("XADD", "stream_key", "0-0", "foo", "bar")
     # send_redis_command("XADD", "stream_key", "0-*", "foo", "bar")
@@ -64,8 +64,8 @@ if __name__ == "__main__":
     # send_redis_command("XADD", "stream_key", "1526919030496-*", "temperature", 36, "humidity", 95)
     # send_redis_command("XADD", "stream_key", "*", "temperature", 36, "humidity", 95)
     # send_redis_command("XREAD", "STREAMS", "stream_key", "1526919030474")
-
-
+    #
+    #
     #
     # send_redis_command("XADD","some_key", "1 - 1", "foo", "bar")
     # send_redis_command("XADD","some_key", "0 - 1", "foo", "baz")
@@ -76,10 +76,10 @@ if __name__ == "__main__":
     # send_redis_command('XADD', 'stream_key', '0-1', 'temperature', '95')
     # send_redis_command('XADD', 'other_stream_key', '0-2', 'humidity', '97')
     # send_redis_command('XREAD', 'streams', 'stream_key', 'other_stream_key', '0-1', '0-2')
-    #
-    send_redis_command('XADD', 'orange', '0-1', 'temperature', '52')
-    send_redis_command('XREAD', 'streams', 'orange', '0-0')
-    send_redis_command('XADD', 'orange', '0-2', 'humidity', '73')
+    # #
+    # send_redis_command('XADD', 'orange', '0-1', 'temperature', '52')
+    # send_redis_command('XREAD', 'streams', 'orange', '0-0')
+    # send_redis_command('XADD', 'orange', '0-2', 'humidity', '73')
 
     # send_redis_command("SET", "fruit", "xyz")
     # send_redis_command("INCR", "fruit")

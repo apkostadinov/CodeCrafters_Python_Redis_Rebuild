@@ -1,7 +1,7 @@
 import asyncio
-from services import parser
-from services.exceptions import *
-from services.streams import *
+from app.services import parser
+from app.services.exceptions import *
+from app.services.streams import *
 from datetime import datetime, timedelta
 
 async def handle_ping(message,state):

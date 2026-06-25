@@ -146,7 +146,7 @@ async def handle_lrange(message, state, server):
         working_list = server.lists[key]
     except KeyError:
         print("LRANGE: Key not found")
-        server.writer.write(b"*0\r\n")
+        state.writer.write(b"*0\r\n")
         return
 
     if start < 0:
@@ -166,9 +166,9 @@ async def handle_lrange(message, state, server):
         if isinstance(working_list, list):
             for i in range(start, stop + 1):
                 returnable.append(working_list[i])
-            server.writer.write(parser.encode_array(returnable))
+            state.writer.write(parser.encode_array(returnable))
         else:
-            server.writer.write(parser.encode_bulk_string(working_list))
+            state.writer.write(parser.encode_bulk_string(working_list))
     else:
         state.writer.write(b'*0\r\n')
     await state.writer.drain()
@@ -211,7 +211,7 @@ async def handle_llen(message, state, server):
 async def handle_lpop(message, state, server):
     if message[1]:
         key = message[1]
-        print(server.lists[key])
+
     if len(message) > 2:
         try:
             count = int(message[2])
@@ -225,6 +225,7 @@ async def handle_lpop(message, state, server):
     if key not in server.lists or len(server.lists[key]) == 0:
         state.writer.write(b"$-1\r\n")
         await state.writer.drain()
+        return
 
     if count > 1:
         returnable = []
@@ -259,7 +260,7 @@ async def handle_blpop(message, state, server):
         if timeout == 0:
             value = await future
         else:
-            value = await asyncio.wait_for(future, timeout)
+            value = await asyncio.wait_for(future, timeout/1000)
         state.writer.write(parser.encode_array([key, value]))
         await state.writer.drain()
 

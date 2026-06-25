@@ -1,13 +1,10 @@
 import socket  # noqa: F401
 import asyncio
-from datetime import datetime, timedelta
 
-from handlers import *
-from state import *
-from services import parser
-from services.streams import *
-from services.exceptions import *
-from services.classes import *
+from app.handlers import *
+from app.state import *
+from app.services import parser
+from app.services.exceptions import *
 
 async def handle_client(reader, writer):
     state = ClientState(reader, writer)

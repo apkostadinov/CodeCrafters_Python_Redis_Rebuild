@@ -1,7 +1,7 @@
 import asyncio
-from services import parser
-from services.exceptions import *
-from services.streams import *
+from app.services import parser
+from app.services.exceptions import *
+from app.services.streams import *
 from datetime import datetime, timedelta
 
 async def handle_ping(message,state):
@@ -76,7 +76,7 @@ async def handle_incr(message, state, server):
 
 async def handle_multi(message, state, server):
     state.is_multi = True
-    state.writer.write(parser.encode_bulk_string("OK"))
+    state.writer.write(parser.encode_simple_string("OK"))
     await state.writer.drain()
 
 async def handle_exec(message, state, server):

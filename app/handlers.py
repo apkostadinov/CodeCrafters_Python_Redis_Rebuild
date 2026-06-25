@@ -256,6 +256,7 @@ async def handle_blpop(message, state, server):
 
     server.waiters["list"].setdefault(key, []).append(future)
 
+    timer = datetime.now()
     try:
         if timeout == 0:
             value = await future
@@ -265,6 +266,7 @@ async def handle_blpop(message, state, server):
         await state.writer.drain()
 
     except asyncio.TimeoutError:
+        print(datetime.now()-timer)
         server.waiters["list"][key].remove(future)
         state.writer.write(b"*-1\r\n")
         await state.writer.drain()

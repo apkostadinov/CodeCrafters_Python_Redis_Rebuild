@@ -20,6 +20,8 @@ async def handle_client(reader, writer):
             while True:
                 try:
                     message, consumed = parser.parser(buffer, 0)
+                    print(f'Received: {data} from {address}\n'
+                          f'Decoded: {message}')
                 except parser.IncompleteMessage:
                     break
 
@@ -40,10 +42,6 @@ async def handle_client(reader, writer):
                 writer.write(b"-ERR invalid message\r\n")
                 await writer.drain()
                 continue  # keep connection alive
-
-            print('----------------')
-            print(f'Received: {data} from {address}\n'
-                  f'Decoded: {message}')
 
     except ConnectionResetError:
         print(f'Connection forcibly closed by {address}')

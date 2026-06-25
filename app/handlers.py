@@ -260,7 +260,7 @@ async def handle_blpop(message, state, server):
         if timeout == 0:
             value = await future
         else:
-            value = await asyncio.wait_for(future, timeout/1000)
+            value = await asyncio.wait_for(future, timeout)
         state.writer.write(parser.encode_array([key, value]))
         await state.writer.drain()
 

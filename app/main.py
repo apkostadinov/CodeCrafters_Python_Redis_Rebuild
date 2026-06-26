@@ -84,7 +84,7 @@ async def handle_command(message, state):
             await handle_get(message, state, server)
 
         case "RPUSH":
-            await handle_get(message,state, server)
+            await handle_rpush(message,state, server)
 
         case "LRANGE":
             await handle_lrange(message, state, server)

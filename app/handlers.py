@@ -127,7 +127,7 @@ async def handle_rpush(message, state, server):
         0 if key not in server.waiters["list"] else 0
     )
 
-    state.writer.write(parser.encode_integer(current_len if current_len else count_added))
+    state.writer.write(parser.encode(current_len if current_len else count_added))
     await state.writer.drain()
 
 async def handle_lrange(message, state, server):

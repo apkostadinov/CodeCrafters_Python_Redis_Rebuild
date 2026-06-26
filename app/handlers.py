@@ -98,10 +98,7 @@ async def handle_get(message, state, server):
     if key in server.strings.keys():
         value = server.strings[key]
         print(f'Value found: {value}')
-        if isinstance(value, list) and len(value) > 1:
-            value = parser.encode_array(value)
-        else:
-            value = parser.encode_bulk_string(value)
+        value = parser.encode(value)
     else:
         value = b'$-1\r\n'
     state.writer.write(value)

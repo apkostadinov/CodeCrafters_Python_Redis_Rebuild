@@ -34,3 +34,6 @@ def send_redis_command_contd(*parts: str):
             sock.sendall(message)
             data = sock.recv(1024)
             print(f"Received raw: {data}")
+        for i in range(len(parts)):
+            data = sock.recv(1024)
+            print(f"Received raw: {data}")

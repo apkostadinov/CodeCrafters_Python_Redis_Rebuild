@@ -40,7 +40,7 @@ if __name__ == "__main__":
     # send_redis_command("LLEN", "list_key")
     # send_redis_command('RPUSH', 'mango', 'apple', 'orange', 'mango', 'strawberry', 'blueberry', 'banana', 'raspberry')
     # send_redis_command("LPOP", "mango", 2)
-    send_redis_command('RPUSH', 'pineapple', 'apple')
+    # send_redis_command('RPUSH', 'pineapple', 'apple')
     # send_redis_command("TYPE", "fruit")
     # send_redis_command("LRANGE","list_key",0, - 1)
     # send_redis_command("LLEN", "list_key")
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     # send_redis_command("INCR", "fruit")
     # send_redis_command("GET", "fruit")
 
-    # send_redis_command_contd(["MULTI"],["SET", "fruit", "0"],["INCR", "fruit"],["INCR", "fruit"],["EXEC"])
+    send_redis_command_contd(["MULTI"],["SET", "fruit", "0"],["INCR", "fruit"],["INCR", "fruit"],["GET","fruit"],["EXEC"])
 
     # print(encode_command("MULTI"))
     # print(encode_command("SET", "fruit", "0"))

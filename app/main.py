@@ -66,8 +66,8 @@ async def handle_command(message, state):
 
         elif command == "EXEC":
             state.is_multi = False
-            response = []
             if len(state.tx_queue) > 0:
+                response = []
                 while len(state.tx_queue)>0:
                     mssg = state.tx_queue.pop(0)
                     rsp = await handle_command(mssg, state)

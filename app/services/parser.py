@@ -189,7 +189,10 @@ def encode(val: [int, str, list]):
     if isinstance(val, list):
         return encode_array(val)
     elif isinstance(val, str):
-        return encode_bulk_string(val)
+        if " " in val:
+            return encode_bulk_string(val)
+        else:
+            return encode_simple_string(val)
     elif isinstance(val, int):
         return encode_integer(val)
     else:

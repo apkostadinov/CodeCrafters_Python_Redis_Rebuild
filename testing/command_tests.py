@@ -4,8 +4,8 @@ from testing_utils import *
 
 if __name__ == "__main__":
     # print(parser.parser_first(b'*3\r\n$3\r\nSET\r\n$9\r\nblueberry\r\n$9\r\nraspberry\r\n'))
-    # send_redis_command("PING")
-    # send_redis_command("PING")
+    send_redis_command("PING")
+    send_redis_command("PING", "PING")
     # send_redis_command("ECHO", "hello")
     # send_redis_command("SET", "fruit", "apple")
     # send_redis_command("GET", "fruit")

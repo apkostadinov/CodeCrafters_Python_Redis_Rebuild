@@ -5,27 +5,29 @@ from app.services.streams import *
 from datetime import datetime, timedelta
 
 async def handle_ping(message,state):
+    response = []
     for _ in range(message.count("PING")):
-        response = b'+PONG\r\n'
-        state.writer.write(response)
-        await state.writer.drain()
-        print(f'Sent: {response.decode("utf-8")}')
+        response.append("PONG")
+
+    return parser.encode(response)
+
 
 async def handle_echo(message, state):
     # Extract the message to echo
     print(message)
+    response = []
     for i in range(len(message)):
         if message[i].upper() == "ECHO" and message[i + 1]:
             print(message[i + 1])
-            state.writer.write(parser.encode_bulk_string(message[i + 1]))
-            await state.writer.drain()
+            response.append(parser.encode_bulk_string(message[i + 1]))
             print(f'Sent: {message[i + 1]}')
         else:
             break
 
     else:
-        state.writer.write(b'+""\r\n')
-        await state.writer.drain()
+        response = b'+""\r\n'
+
+    return response
 
 async def handle_set(message, state, server):
     # Extract the key and value to set
@@ -45,10 +47,9 @@ async def handle_set(message, state, server):
             raise RespError("Invalid time format for SET command")
 
     response = b'+OK\r\n'
-    state.writer.write(response)
-    await state.writer.drain()
     print(f'SET - Key: {message[1]} Value: {server.strings[message[1]]}\n'
           f'Sent: {response}')
+    return response
 
 async def handle_incr(message, state, server):
     key = message[1]
@@ -58,9 +59,7 @@ async def handle_incr(message, state, server):
             server.strings[key] = str(value)
         except Exception as e:
             response = parser.encode_simple_error("ERR value is not an integer or out of range")
-            state.writer.write(response)
-            await state.writer.drain()
-            return
+            return response
     else:
         value = 1
         server.strings[key] = "1"
@@ -69,20 +68,13 @@ async def handle_incr(message, state, server):
 
     print(f'{key} from server.strings increased to {value}')
 
-    if response:
-        state.writer.write(response)
-    else:
-        pass
-
-    await state.writer.drain()
+    return response
 
 async def handle_multi(message, state, server):
     state.is_multi = True
-    state.writer.write(parser.encode_simple_string("OK"))
-    await state.writer.drain()
+    return parser.encode_simple_string("OK")
 
 async def handle_exec(message, state, server):
-    #TODO
     pass
 
 async def handle_get(message, state, server):
@@ -103,8 +95,8 @@ async def handle_get(message, state, server):
         value = parser.encode(value)
     else:
         value = b'$-1\r\n'
-    state.writer.write(value)
-    await state.writer.drain()
+
+    return value
 
 async def handle_rpush(message, state, server):
     key = message[1]
@@ -126,8 +118,8 @@ async def handle_rpush(message, state, server):
         0 if key not in server.waiters["list"] else 0
     )
 
-    state.writer.write(parser.encode(current_len if current_len else count_added))
-    await state.writer.drain()
+    return parser.encode(current_len if current_len else count_added)
+
 
 async def handle_lrange(message, state, server):
     key = message[1]
@@ -145,8 +137,8 @@ async def handle_lrange(message, state, server):
         working_list = server.lists[key]
     except KeyError:
         print("LRANGE: Key not found")
-        state.writer.write(b"*0\r\n")
-        return
+        return b"*0\r\n"
+
 
     if start < 0:
         start = len(working_list) + start
@@ -165,12 +157,11 @@ async def handle_lrange(message, state, server):
         if isinstance(working_list, list):
             for i in range(start, stop + 1):
                 returnable.append(working_list[i])
-            state.writer.write(parser.encode_array(returnable))
+            return parser.encode_array(returnable)
         else:
-            state.writer.write(parser.encode_bulk_string(working_list))
+            return parser.encode_bulk_string(working_list)
     else:
-        state.writer.write(b'*0\r\n')
-    await state.writer.drain()
+        return  b'*0\r\n'
 
 async def handle_lpush(message, state, server):
     key = message[1]
@@ -190,22 +181,16 @@ async def handle_lpush(message, state, server):
             future.set_result(value)
 
     print(server.lists[key])
-    state.writer.write(parser.encode_integer(len(server.lists[key])))
-    await state.writer.drain()
+    return parser.encode_integer(len(server.lists[key]))
+
 
 async def handle_llen(message, state, server):
-    if message[1]:
-        key = message[1]
-    else:
-        key = None
-        state.writer.write(b":0\r\n")
-
     try:
-        state.writer.write(parser.encode_integer(len(server.lists[key])))
+        key = message[1]
         print("LLEN: Key not found")
+        return parser.encode_integer(len(server.lists[key]))
     except KeyError:
-        state.writer.write(b":0\r\n")
-    await state.writer.drain()
+        return b":0\r\n"
 
 async def handle_lpop(message, state, server):
     if message[1]:
@@ -215,16 +200,13 @@ async def handle_lpop(message, state, server):
         try:
             count = int(message[2])
         except ValueError:
-            state.writer.write(b"$-1\r\n")
-            await state.writer.drain()
+            return b"$-1\r\n"
 
     else:
         count = 1
 
     if key not in server.lists or len(server.lists[key]) == 0:
-        state.writer.write(b"$-1\r\n")
-        await state.writer.drain()
-        return
+        return b"$-1\r\n"
 
     if count > 1:
         returnable = []
@@ -236,8 +218,8 @@ async def handle_lpop(message, state, server):
     elif count == 1:
         returnable = server.lists[key].pop(0)
 
-    state.writer.write(parser.encode(returnable))
-    await state.writer.drain()
+    return parser.encode(returnable)
+
 
 async def handle_blpop(message, state, server):
     key = message[1]
@@ -245,10 +227,7 @@ async def handle_blpop(message, state, server):
 
     if key in server.lists and len(server.lists[key]) > 0:
         value = server.lists[key].pop(0)
-        response = parser.encode_array([key, value])
-        state.writer.write(response)
-        await state.writer.drain()
-        return
+        return parser.encode_array([key, value])
 
     loop = asyncio.get_event_loop()
     future = loop.create_future()
@@ -261,8 +240,8 @@ async def handle_blpop(message, state, server):
             value = await future
         else:
             value = await asyncio.wait_for(future, timeout)
-        state.writer.write(parser.encode_array([key, value]))
-        await state.writer.drain()
+        return parser.encode_array([key, value])
+
 
     except asyncio.TimeoutError:
         print(datetime.now()-timer)
@@ -281,8 +260,7 @@ async def handle_type(message, state, server):
     else:
         response = parser.encode_simple_string("none")
 
-    state.writer.write(response)
-    await state.writer.drain()
+    return response
 
 async def handle_xadd(message, state, server):
     key = message[1]
@@ -326,8 +304,7 @@ async def handle_xadd(message, state, server):
             value = server.streams[key]
             future.set_result(value)
 
-    state.writer.write(response)
-    await state.writer.drain()
+    return response
 
 async def handle_xrange(message, state, server):
     key = message[1] if message[1] else None
@@ -378,8 +355,7 @@ async def handle_xrange(message, state, server):
 
     print(collection)
 
-    state.writer.write(parser.encode_array(collection))
-    await state.writer.drain()
+    return parser.encode_array(collection)
 
 async def handle_xread(message, state, server):
     pairs = dict()
@@ -425,9 +401,7 @@ async def handle_xread(message, state, server):
 
             except asyncio.TimeoutError:
                 server.waiters["stream"][key].remove(future)
-                state.writer.write(b"*-1\r\n")
-                await state.writer.drain()
-                return
+                return b"*-1\r\n"
 
     else:
         raise RespError("Malformed command.")
@@ -439,5 +413,4 @@ async def handle_xread(message, state, server):
 
     print(response)
 
-    state.writer.write(response)
-    await state.writer.drain()
+    return response

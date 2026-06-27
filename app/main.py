@@ -26,7 +26,10 @@ async def handle_client(reader, writer):
                     break
 
                 buffer = buffer[consumed:]
-                await handle_command(message, state)
+                response = await handle_command(message, state)
+                print(response)
+                state.writer.write(response)
+                await writer.drain()
 
             if data == b'':
                 # True disconnect — still break
@@ -59,22 +62,20 @@ async def handle_command(message, state):
         if command != "EXEC":
             state.tx_queue.append(message)
             print('Sent: "QUEUED"')
-            state.writer.write(parser.encode_simple_string("QUEUED"))
-            await state.writer.drain()
-            return
+            return parser.encode_simple_string("QUEUED")
 
         elif command == "EXEC":
             state.is_multi = False
+            response = []
             if len(state.tx_queue) > 0:
                 while len(state.tx_queue)>0:
                     mssg = state.tx_queue.pop(0)
-                    await handle_command(mssg, state)
+                    response.append(await handle_command(mssg, state))
                 return
 
             elif len(state.tx_queue) == 0:
-                state.writer.write(b"*0\r\n")
-                await state.writer.drain()
-                return
+                return (b"*0\r\n")
+
 
     if command == "EXEC":
         state.writer.write(b"-ERR EXEC without MULTI\r\n")
@@ -84,57 +85,60 @@ async def handle_command(message, state):
     match command:
 
         case "PING":
-            await handle_ping(message,state)
+            response = await handle_ping(message,state)
 
         case "ECHO":
-            await handle_echo(message, state)
+            response = await handle_echo(message, state)
 
         case "SET":
-            await handle_set(message, state, server)
+            response = await handle_set(message, state, server)
 
         case "INCR":
-            await handle_incr(message, state, server)
+            response = await handle_incr(message, state, server)
 
         case "MULTI":
-            await handle_multi(message, state, server)
+            response = await handle_multi(message, state, server)
+
         case "EXEC":
-            await handle_exec(message, state, server)
+            response = await handle_exec(message, state, server)
 
         case "GET":
-            await handle_get(message, state, server)
+            response = await handle_get(message, state, server)
 
         case "RPUSH":
-            await handle_rpush(message,state, server)
+            response = await handle_rpush(message,state, server)
 
         case "LRANGE":
-            await handle_lrange(message, state, server)
+            response = await handle_lrange(message, state, server)
 
         case "LPUSH":
-            await handle_lpush(message, state, server)
+            response = await handle_lpush(message, state, server)
 
         case "LLEN":
-            await handle_llen(message, state, server)
+            response = await handle_llen(message, state, server)
 
         case "LPOP":
-            await handle_lpop(message, state, server)
+            response = await handle_lpop(message, state, server)
 
         case "BLPOP":
-            await handle_blpop(message, state, server)
+            response = await handle_blpop(message, state, server)
 
         case "TYPE":
-            await handle_type(message, state, server)
+            response = await handle_type(message, state, server)
 
         case "XADD":
-            await handle_xadd(message, state, server)
+            response = await handle_xadd(message, state, server)
 
         case "XRANGE":
-            await handle_xrange(message, state, server)
+            response = await handle_xrange(message, state, server)
 
         case "XREAD":
-            await handle_xread(message, state, server)
+            response = await handle_xread(message, state, server)
 
         case _:
             raise RespError("Unknown command returns -ERR")
+
+    return response
     print('----------------')
 
 async def main():

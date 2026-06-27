@@ -196,6 +196,9 @@ def encode(val: [int, str, list]):
             return encode_simple_string(val)
     elif isinstance(val, int):
         return encode_integer(val)
+
+    elif isinstance(val, bytes):
+        return val
     else:
         raise RespError("Passed value is not a list, str or int.")
 

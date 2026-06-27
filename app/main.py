@@ -62,17 +62,17 @@ async def handle_command(message, state):
         await state.writer.drain()
         return
 
-    elif state.is_multi and command == "EXEC":
-        state.is_multi = False
-        while len(state.tx_queue)>0:
-            mssg = state.tx_queue.pop(0)
-            await handle_command(mssg, state)
-        return
-
-    elif state.is_multi == False and command == "EXEC":
-        state.writer.write(b"-ERR EXEC without MULTI\r\n")
-        await state.writer.drain()
-        return
+    elif command == "EXEC":
+        if state.is_multi:
+            state.is_multi = False
+            while len(state.tx_queue)>0:
+                mssg = state.tx_queue.pop(0)
+                await handle_command(mssg, state)
+            return
+        else:
+            state.writer.write(b"-ERR EXEC without MULTI\r\n")
+            await state.writer.drain()
+            return
 
     match command:
 

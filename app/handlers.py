@@ -67,6 +67,8 @@ async def handle_incr(message, state, server):
 
     response = parser.encode_integer(value) if value else None
 
+    print(f'{key} from server.strings increased to {value}')
+
     if response:
         state.writer.write(response)
     else:

@@ -152,6 +152,8 @@ def encode_array(values: list[str|int|list]):
     for var in values:
         if isinstance(var, int):
             returnable += encode_integer(var)
+        elif isinstance(var, bytes):
+            returnable += var
         elif isinstance(var, str):
             returnable += encode_bulk_string(var)
         elif isinstance(var, list):
@@ -185,10 +187,14 @@ def encode_simple_error(val:str):
     else:
         raise ValueError("Passed value is not a string.")
 
-def encode(val: [int, str, list]):
+def encode(val: [int, str, list, bytes]):
     print(f'Value to encode: {val}')
     if isinstance(val, list):
         return encode_array(val)
+
+    elif isinstance(val, bytes):
+        return val
+
     elif isinstance(val, str):
         if " " in val:
             return encode_bulk_string(val)
@@ -197,8 +203,6 @@ def encode(val: [int, str, list]):
     elif isinstance(val, int):
         return encode_integer(val)
 
-    elif isinstance(val, bytes):
-        return val
     else:
         raise RespError("Passed value is not a list, str or int.")
 

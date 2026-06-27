@@ -55,24 +55,31 @@ async def handle_client(reader, writer):
 async def handle_command(message, state):
     command = message[0]
 
-    if state.is_multi and command != "EXEC":
-        state.tx_queue.append(message)
-        print('Sent: "QUEUED"')
-        state.writer.write(parser.encode_bulk_string("QUEUED"))
-        await state.writer.drain()
-        return
-
-    elif command == "EXEC":
-        if state.is_multi:
-            state.is_multi = False
-            while len(state.tx_queue)>0:
-                mssg = state.tx_queue.pop(0)
-                await handle_command(mssg, state)
-            return
-        else:
-            state.writer.write(b"-ERR EXEC without MULTI\r\n")
+    if state.is_multi:
+        if command != "EXEC":
+            state.tx_queue.append(message)
+            print('Sent: "QUEUED"')
+            state.writer.write(parser.encode_bulk_string("QUEUED"))
             await state.writer.drain()
             return
+
+        elif command == "EXEC":
+            state.is_multi = False
+            if len(state.tx_queue) > 0:
+                while len(state.tx_queue)>0:
+                    mssg = state.tx_queue.pop(0)
+                    await handle_command(mssg, state)
+                return
+
+            elif len(state.tx_queue) == 0:
+                state.writer.write(b"*0\r\n")
+                await state.writer.drain()
+                return
+
+    if command == "EXEC":
+        state.writer.write(b"-ERR EXEC without MULTI\r\n")
+        await state.writer.drain()
+        return
 
     match command:
 

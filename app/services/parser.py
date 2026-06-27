@@ -186,6 +186,7 @@ def encode_simple_error(val:str):
         raise ValueError("Passed value is not a string.")
 
 def encode(val: [int, str, list]):
+    print(f'Value to encode: {val}')
     if isinstance(val, list):
         return encode_array(val)
     elif isinstance(val, str):

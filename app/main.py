@@ -71,7 +71,7 @@ async def handle_command(message, state):
                 while len(state.tx_queue)>0:
                     mssg = state.tx_queue.pop(0)
                     response.append(await handle_command(mssg, state))
-                return
+                return parser.encode(response)
 
             elif len(state.tx_queue) == 0:
                 return (b"*0\r\n")

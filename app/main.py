@@ -59,7 +59,7 @@ async def handle_command(message, state):
         if command != "EXEC":
             state.tx_queue.append(message)
             print('Sent: "QUEUED"')
-            state.writer.write(parser.encode_bulk_string("QUEUED"))
+            state.writer.write(parser.encode_simple_string("QUEUED"))
             await state.writer.drain()
             return
 

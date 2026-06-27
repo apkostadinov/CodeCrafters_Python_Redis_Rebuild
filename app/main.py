@@ -69,6 +69,11 @@ async def handle_command(message, state):
             await handle_command(mssg, state)
         return
 
+    elif state.is_multi == False and command == "EXEC":
+        state.writer.write(b"-ERR EXEC without MULTI\r\n")
+        await state.writer.drain()
+        return
+
     match command:
 
         case "PING":

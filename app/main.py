@@ -70,7 +70,8 @@ async def handle_command(message, state):
             if len(state.tx_queue) > 0:
                 while len(state.tx_queue)>0:
                     mssg = state.tx_queue.pop(0)
-                    response.append(await handle_command(mssg, state))
+                    rsp = await handle_command(mssg, state)
+                    response.append(rsp)
                 return parser.encode(response)
 
             elif len(state.tx_queue) == 0:

@@ -3,13 +3,14 @@ from app.services import parser
 from app.services.exceptions import *
 from app.services.streams import *
 from datetime import datetime, timedelta
+from app.services.classes import RedisResponse
 
 async def handle_ping(message,state):
     response = []
     for _ in range(message.count("PING")):
         response.append("PONG")
 
-    return parser.encode(response)
+    return RedisResponse("PONG", "+")
 
 
 async def handle_echo(message, state):
@@ -19,15 +20,19 @@ async def handle_echo(message, state):
     for i in range(len(message)):
         if message[i].upper() == "ECHO" and message[i + 1]:
             print(message[i + 1])
-            response.append(parser.encode_bulk_string(message[i + 1]))
+            response.append(message[i + 1], "$")
             print(f'Sent: {message[i + 1]}')
         else:
             break
 
     else:
-        response = b'+""\r\n'
+        response = RedisResponse("","+")
 
-    return response
+    if len(response) > 0:
+        return RedisResponse(response, "$")
+    else:
+        return RedisResponse("","+")
+
 
 async def handle_set(message, state, server):
     # Extract the key and value to set
@@ -46,7 +51,7 @@ async def handle_set(message, state, server):
         else:
             raise RespError("Invalid time format for SET command")
 
-    response = b'+OK\r\n'
+    response = RedisResponse("OK", "+")
     print(f'SET - Key: {message[1]} Value: {server.strings[message[1]]}\n'
           f'Sent: {response}')
     return response
@@ -58,27 +63,24 @@ async def handle_incr(message, state, server):
             value = int(server.strings[key]) + 1
             server.strings[key] = str(value)
         except Exception as e:
-            response = parser.encode_simple_error("ERR value is not an integer or out of range")
-            return response
+            return RedisResponse("ERR value is not an integer or out of range", "simple_error")
     else:
         value = 1
         server.strings[key] = "1"
 
-    response = parser.encode_integer(value) if value else None
-
     print(f'{key} from server.strings increased to {value}')
 
-    return response
+    return RedisResponse(value, ":") if value else None
 
 async def handle_multi(message, state, server):
     state.is_multi = True
-    return parser.encode_simple_string("OK")
+    return RedisResponse("OK", "+")
 
 async def handle_exec(message, state, server):
     pass
 
 async def handle_get(message, state, server):
-    value = b'$-1\r\n'
+    value = RedisResponse("-1", "$")
     if message[1]:
         key = message[1]
     else:
@@ -92,9 +94,9 @@ async def handle_get(message, state, server):
     if key in server.strings.keys():
         value = server.strings[key]
         print(f'Value found: {value}')
-        value = parser.encode(value)
+        value = RedisResponse(value, "$")
     else:
-        value = b'$-1\r\n'
+        value = RedisResponse("-1", "$")
 
     return value
 
@@ -118,7 +120,7 @@ async def handle_rpush(message, state, server):
         0 if key not in server.waiters["list"] else 0
     )
 
-    return parser.encode(current_len if current_len else count_added)
+    return RedisResponse(current_len if current_len else count_added, ":")
 
 
 async def handle_lrange(message, state, server):
@@ -137,7 +139,7 @@ async def handle_lrange(message, state, server):
         working_list = server.lists[key]
     except KeyError:
         print("LRANGE: Key not found")
-        return b"*0\r\n"
+        return RedisResponse("0", "*")
 
 
     if start < 0:
@@ -157,11 +159,11 @@ async def handle_lrange(message, state, server):
         if isinstance(working_list, list):
             for i in range(start, stop + 1):
                 returnable.append(working_list[i])
-            return parser.encode_array(returnable)
+            return RedisResponse(returnable, "*")
         else:
-            return parser.encode_bulk_string(working_list)
+            return RedisResponse(working_list, "$")
     else:
-        return  b'*0\r\n'
+        return RedisResponse("0", "*")
 
 async def handle_lpush(message, state, server):
     key = message[1]
@@ -181,7 +183,7 @@ async def handle_lpush(message, state, server):
             future.set_result(value)
 
     print(server.lists[key])
-    return parser.encode_integer(len(server.lists[key]))
+    return RedisResponse(len(server.lists[key]),":")
 
 
 async def handle_llen(message, state, server):
@@ -190,7 +192,7 @@ async def handle_llen(message, state, server):
         print("LLEN: Key not found")
         return parser.encode_integer(len(server.lists[key]))
     except KeyError:
-        return b":0\r\n"
+        return RedisResponse("0",":")
 
 async def handle_lpop(message, state, server):
     if message[1]:
@@ -200,13 +202,13 @@ async def handle_lpop(message, state, server):
         try:
             count = int(message[2])
         except ValueError:
-            return b"$-1\r\n"
+            return RedisResponse("-1", "$")
 
     else:
         count = 1
 
     if key not in server.lists or len(server.lists[key]) == 0:
-        return b"$-1\r\n"
+        return RedisResponse("-1", "$")
 
     if count > 1:
         returnable = []
@@ -218,7 +220,7 @@ async def handle_lpop(message, state, server):
     elif count == 1:
         returnable = server.lists[key].pop(0)
 
-    return parser.encode(returnable)
+    return RedisResponse(returnable, "*")
 
 
 async def handle_blpop(message, state, server):
@@ -227,7 +229,7 @@ async def handle_blpop(message, state, server):
 
     if key in server.lists and len(server.lists[key]) > 0:
         value = server.lists[key].pop(0)
-        return parser.encode_array([key, value])
+        return RedisResponse([key, value], "*")
 
     loop = asyncio.get_event_loop()
     future = loop.create_future()
@@ -240,27 +242,23 @@ async def handle_blpop(message, state, server):
             value = await future
         else:
             value = await asyncio.wait_for(future, timeout)
-        return parser.encode_array([key, value])
-
+        return RedisResponse([key, value], "*")
 
     except asyncio.TimeoutError:
         print(datetime.now()-timer)
         server.waiters["list"][key].remove(future)
-        state.writer.write(b"*-1\r\n")
-        await state.writer.drain()
+        return RedisResponse("-1", "*")
 
 async def handle_type(message, state, server):
     key = message[1]
     if key in server.strings.keys():
-        response = parser.encode_simple_string("string")
+        return RedisResponse("string","+")
     elif key in server.lists.keys():
-        response = parser.encode_simple_string("list")
+        return RedisResponse("list", "+")
     elif key in server.streams.keys():
-        response = parser.encode_simple_string("stream")
+        return RedisResponse("stream", "+")
     else:
-        response = parser.encode_simple_string("none")
-
-    return response
+        return RedisResponse("none", "+")
 
 async def handle_xadd(message, state, server):
     key = message[1]
@@ -274,7 +272,7 @@ async def handle_xadd(message, state, server):
     main_id_ms, main_id_sq = deconstruct_stream_id(main_id)
 
     if (main_id_ms, main_id_sq) == ('0', '0'):
-        response = parser.encode_simple_error("ERR The ID specified in XADD must be greater than 0-0")
+        response = RedisResponse("ERR The ID specified in XADD must be greater than 0-0", "-")
 
     if key in server.streams.keys():
         stream = server.streams[key][-1]
@@ -289,14 +287,15 @@ async def handle_xadd(message, state, server):
 
         if validate_stream_id(main_id_ms, main_id_sq, stream):
             server.streams[key].append({"xid": main_id} | temp_dict)
-            response = parser.encode_bulk_string(main_id)
+            response = RedisResponse(main_id, "$")
         else:
-            response = parser.encode_simple_error(
-                "ERR The ID specified in XADD is equal or smaller than the target stream top item")
+            response = RedisResponse(
+                "ERR The ID specified in XADD is equal or smaller than the target stream top item",
+                "-")
 
     if validate_stream_id(main_id_ms, main_id_sq) and response is None:
         server.streams[key] = [{"xid": main_id} | temp_dict]
-        response = parser.encode_bulk_string(main_id)
+        response = RedisResponse(main_id, "$")
 
     if key in server.waiters["stream"] and server.waiters["stream"][key]:
         future = server.waiters["stream"][key].pop(0)
@@ -355,7 +354,7 @@ async def handle_xrange(message, state, server):
 
     print(collection)
 
-    return parser.encode_array(collection)
+    return RedisResponse(collection, "*")
 
 async def handle_xread(message, state, server):
     pairs = dict()
@@ -401,16 +400,14 @@ async def handle_xread(message, state, server):
 
             except asyncio.TimeoutError:
                 server.waiters["stream"][key].remove(future)
-                return b"*-1\r\n"
+                return RedisResponse("-1", "*")
 
     else:
         raise RespError("Malformed command.")
 
-    if collection:
-        response = parser.encode_array(collection)
-    else:
-        response = b"*-1\r\n"
-
     print(response)
 
-    return response
+    if collection:
+        return RedisResponse(collection, "*")
+    else:
+        return RedisResponse("-1", "*")

@@ -15,6 +15,8 @@
 #         b">": push(data)
 from typing import Any, Tuple, Optional
 from .exceptions import RespError, IncompleteMessage
+
+
 CRLF = b"\r\n"
 
 print(f"Importing {__name__}")
@@ -134,79 +136,7 @@ def parser_first(buf: bytes, i=0) -> Any:
     val, next_i = parser(buf, i)
     return val, next_i
 
-
-
-def encode_stream(values):
-    response = f"*{len(values)}\r\n".encode("utf-8")
-
-    for key in values.keys():
-        response += f"*2\r\n".encode("utf-8")
-        response += encode_bulk_string(key)
-        response += encode_array()
-
-
-
-
-def encode_array(values: list[str|int|list]):
-    returnable = f'*{len(values)}\r\n'.encode("utf-8")
-    for var in values:
-        if isinstance(var, int):
-            returnable += encode_integer(var)
-        elif isinstance(var, bytes):
-            returnable += var
-        elif isinstance(var, str):
-            returnable += encode_bulk_string(var)
-        elif isinstance(var, list):
-            returnable += encode_array(var)
-    # array_len = len(returnable)
-    # returnable.insert(0, f'*{array_len}\r\n')
-    return returnable
-
-def encode_integer(n: int):
-    if isinstance(n, int):
-        return f":{n}\r\n".encode("utf-8")
-    else:
-        raise ValueError("Passed value is not an integer.")
-
-def encode_bulk_string(val: str):
-    if isinstance(val, str) and len(val) >= 1:
-        length = len(val)
-        return f"${length}\r\n{val}\r\n".encode("utf-8")
-    else:
-        raise ValueError("Passed value is not a string.")
-
-def encode_simple_string(val:str):
-    if isinstance(val, str):
-        return f"+{val}\r\n".encode("utf-8")
-    else:
-        raise ValueError("Passed value is not a string.")
-
-def encode_simple_error(val:str):
-    if isinstance(val, str):
-        return f"-{val}\r\n".encode("utf-8")
-    else:
-        raise ValueError("Passed value is not a string.")
-
-def encode(val: [int, str, list, bytes]):
-    print(f'Value to encode: {val}')
-    if isinstance(val, list):
-        return encode_array(val)
-
-    elif isinstance(val, bytes):
-        return val
-
-    elif isinstance(val, str):
-        if " " in val:
-            return encode_bulk_string(val)
-        else:
-            return encode_simple_string(val)
-    elif isinstance(val, int):
-        return encode_integer(val)
-
-    else:
-        raise RespError("Passed value is not a list, str or int.")
-
-print('parser version: 0.3, created 26.10.2025')
+print('parser version: 0.4, created 30.06.2026')
 # print(parser_first(b"$4\r\nPING\r\n"))
 # print(parser_first(b'+OK\r\n'))
 # print(parser_first(b"*2\r\n$4\r\nPING\r\n$4\r\nPONG\r\n"))

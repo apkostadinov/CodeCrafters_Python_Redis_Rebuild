@@ -5,6 +5,8 @@ from app.handlers import *
 from app.state import *
 from app.services import parser
 from app.services.exceptions import *
+from app.services.classes import RedisResponse
+from app.services.encoder import encode
 
 async def handle_client(reader, writer):
     state = ClientState(reader, writer)
@@ -27,6 +29,8 @@ async def handle_client(reader, writer):
 
                 buffer = buffer[consumed:]
                 response = await handle_command(message, state)
+                print(response)
+                response = encode(response)
                 print(response)
                 state.writer.write(response)
                 await writer.drain()
@@ -62,7 +66,7 @@ async def handle_command(message, state):
         if command != "EXEC":
             state.tx_queue.append(message)
             print('Sent: "QUEUED"')
-            return parser.encode_simple_string("QUEUED")
+            return RedisResponse("QUEUED", "+")
 
         elif command == "EXEC":
             state.is_multi = False
@@ -72,16 +76,15 @@ async def handle_command(message, state):
                     mssg = state.tx_queue.pop(0)
                     rsp = await handle_command(mssg, state)
                     response.append(rsp)
-                return parser.encode(response)
+                response = RedisResponse(response, "*")
+                return response
 
             elif len(state.tx_queue) == 0:
-                return (b"*0\r\n")
+                return RedisResponse("0", "*")
 
 
     if command == "EXEC":
-        state.writer.write(b"-ERR EXEC without MULTI\r\n")
-        await state.writer.drain()
-        return
+        return RedisResponse("ERR EXEC without MULTI", "-")
 
     match command:
 

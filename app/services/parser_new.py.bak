@@ -1,9 +1,25 @@
+#         b"*": array(data),
+#         b"+": simple_string(data),
+#         b"-": simple_errors(data),
+#         b":": integer(data),
+#         b"$": bulk_string(data),
+#         b"_": None,
+#         b"#": boolean(data),
+#         b",": double(data),
+#         b"(": big_numbers(data),
+#         b"!": bulk_errors(data),
+#         b"=": verbatim(data),
+#         b"%": maps(data),
+#         b"|": attribute(data),
+#         b"~": sets(data),
+#         b">": push(data)
 from typing import Any, Tuple, Optional
+from .exceptions import RespError, IncompleteMessage
+from classes import RedisResponse
 
 CRLF = b"\r\n"
 
-class RespError(Exception):
-    pass
+print(f"Importing {__name__}")
 
 def read_line(buf: bytes, i: int) -> Tuple[bytes, int]:
     """
@@ -16,22 +32,65 @@ def read_line(buf: bytes, i: int) -> Tuple[bytes, int]:
         raise RespError("Incomplete frame: missing CRLF")
     return buf[i:j], j + 2
 
-def parse_simple_string(buf: bytes, i: int) -> Tuple[str, int]:
-    # +OK\r\n
+def parse_array(buf, i):
+    line, i = read_line(buf, i)
+
+    try:
+        length = int(line[1:])
+    except ValueError:
+        raise RespError("Invalid array length")
+
+    # Null array
+    if length == -1:
+        return None, i
+
+    values = []
+
+    for _ in range(length):
+        element, i = parser(buf, i)  # may raise IncompleteMessage
+        values.append(element)
+
+    return values, i
+
+def parse_bulk_string(buf, i):
+    # Read "$<length>\r\n"
+    line, i = read_line(buf, i)
+
+    try:
+        length = int(line[1:])
+    except ValueError:
+        raise RespError("Invalid bulk string length")
+
+    # NULL bulk string
+    if length == -1:
+        return None, i
+
+    # Check if we have enough data
+    end = i + length
+    if end + 2 > len(buf):
+        raise IncompleteMessage()
+
+    data = buf[i:end]
+
+    # Validate trailing CRLF
+    if buf[end:end + 2] != CRLF:
+        raise RespError("Bulk string missing terminating CRLF")
+
+    return data.decode("utf-8"), end + 2
+
+def parse_simple_string(buf, i):
     line, i = read_line(buf, i)
     if not line.startswith(b"+"):
         raise RespError("Invalid simple string")
-    return line[1:].decode("utf-8"), i
+    return line[1:].decode("utf-8"), i+2
 
-def parse_simple_error(buf: bytes, i: int) -> Tuple[str, int]:
-    # -ERR something\r\n
+def parse_simple_error(buf, i):
     line, i = read_line(buf, i)
     if not line.startswith(b"-"):
         raise RespError("Invalid error")
-    return line[1:].decode("utf-8"), i
+    return line[1:].decode("utf-8"), i+2
 
-def parse_integer(buf: bytes, i: int) -> Tuple[int, int]:
-    # :123\r\n
+def parse_integer(buf, i):
     line, i = read_line(buf, i)
     if not line.startswith(b":"):
         raise RespError("Invalid integer")
@@ -40,62 +99,17 @@ def parse_integer(buf: bytes, i: int) -> Tuple[int, int]:
     except ValueError as e:
         raise RespError(f"Invalid integer payload: {line!r}") from e
 
-def parse_bulk_string(buf: bytes, i: int) -> Tuple[Optional[bytes], int]:
-    # $<len>\r\n<data>\r\n or $-1\r\n (null)
+def parse_boolean(buf, i):
     line, i = read_line(buf, i)
-    if not line.startswith(b"$"):
-        raise RespError("Invalid bulk string header")
-    try:
-        length = int(line[1:])
-    except ValueError as e:
-        raise RespError(f"Invalid bulk string length: {line!r}") from e
-
-    if length == -1:
-        return None, i  # Null Bulk String
-
-    end = i + length
-    if end + 2 > len(buf):
-        raise RespError("Incomplete bulk string data")
-    data = buf[i:end]
-    if buf[end:end+2] != CRLF:
-        raise RespError("Bulk string missing terminating CRLF")
-    return data, end + 2
-
-def parse_array(buf: bytes, i: int) -> Tuple[Optional[list], int]:
-    # *<count>\r\n<elem1>... or *-1\r\n (null)
-    line, i = read_line(buf, i)
-    if not line.startswith(b"*"):
-        raise RespError("Invalid array header")
-    try:
-        count = int(line[1:])
-    except ValueError as e:
-        raise RespError(f"Invalid array length: {line!r}") from e
-
-    if count == -1:
-        return None, i  # Null Array
-
-    items = []
-    for _ in range(count):
-        val, i = parse(buf, i)
-        items.append(val)
-    return items, i
-
-# Optional RESP3 boolean placeholder, not used in RESP2 Codecrafters stage
-def parse_boolean(buf: bytes, i: int) -> Tuple[bool, int]:
-    # #t\r\n or #f\r\n (RESP3)
-    line, i = read_line(buf, i)
-    if not line.startswith(b"#") or len(line) != 2 or line[1:2] not in (b"t", b"f"):
+    if not line.startswith(b"#"):
         raise RespError("Invalid boolean")
     return (line[1:2] == b"t"), i
 
-def parse(buf: bytes, i: int = 0) -> Tuple[Any, int]:
-    """
-    Dispatcher that peeks at the first byte and routes to the right parser.
-    Returns (value, next_index).
-    """
+def parser(buf, i):
     if i >= len(buf):
-        raise RespError("Empty/incomplete buffer")
-    t = buf[i:i+1]
+        raise IncompleteMessage()
+
+    t = buf[i:i + 1]
     if t == b"+":
         return parse_simple_string(buf, i)
     if t == b"-":
@@ -109,14 +123,46 @@ def parse(buf: bytes, i: int = 0) -> Tuple[Any, int]:
     # RESP3 types can be added here:
     if t == b"#":
         return parse_boolean(buf, i)
+    if t == b'_':
+        return None
+
 
     raise RespError(f"Unsupported type byte: {t!r}")
+def parser_first(buf: bytes, i=0) -> Any:
+    """
+    Dispatcher that peeks at the first byte and routes to the right parser.
+    Returns (value, next_index).
+    """
+    val, next_i = parser(buf, i)
+    return val, next_i
 
-# Convenience function: parse a single frame and return only the value.
-def parse_one(buf: bytes) -> Any:
-    val, next_i = parse(buf, 0)
-    # If you want to enforce complete consumption, you can check next_i == len(buf)
-    return val
+
+
+def encode_stream(values):
+    response = f"*{len(values)}\r\n".encode("utf-8")
+
+    for key in values.keys():
+        response += f"*2\r\n".encode("utf-8")
+        response += encode_bulk_string(key)
+        response += encode_array()
+
+
+
+
+def encode_array(values: list[str|int|list]):
+    returnable = f'*{len(values)}\r\n'.encode("utf-8")
+    for var in values:
+        if isinstance(var, int):
+            returnable += encode_integer(var)
+        elif isinstance(var, bytes):
+            returnable += var
+        elif isinstance(var, str):
+            returnable += encode_bulk_string(var)
+        elif isinstance(var, list):
+            returnable += encode_array(var)
+    # array_len = len(returnable)
+    # returnable.insert(0, f'*{array_len}\r\n')
+    return returnable
 
 def encode_integer(n: int):
     if isinstance(n, int):
@@ -124,12 +170,45 @@ def encode_integer(n: int):
     else:
         raise ValueError("Passed value is not an integer.")
 
-if __name__ == "__main__":
-    # Demo cases:
-    print(parse_one(b"+OK\r\n"))  # 'OK'
-    print(parse_one(b":123\r\n"))  # 123
-    print(parse_one(b"$-1\r\n"))  # None
-    print(parse_one(b"$4\r\nPING\r\n"))  # b'PING'
-    arr = b"*3\r\n$4\r\nPING\r\n$4\r\nPONG\r\n$4\r\nPING\r\n"
-    print(parse_one(arr))  # [b'PING', b'PONG', b'PING']
-    print(encode_integer(2))
+def encode_bulk_string(val: str):
+    if isinstance(val, str) and len(val) >= 1:
+        length = len(val)
+        return f"${length}\r\n{val}\r\n".encode("utf-8")
+    else:
+        raise ValueError("Passed value is not a string.")
+
+def encode_simple_string(val:str):
+    if isinstance(val, str):
+        return f"+{val}\r\n".encode("utf-8")
+    else:
+        raise ValueError("Passed value is not a string.")
+
+def encode_simple_error(val:str):
+    if isinstance(val, str):
+        return f"-{val}\r\n".encode("utf-8")
+    else:
+        raise ValueError("Passed value is not a string.")
+
+def encode(val: RedisResponse):
+    print(f'Value to encode: {val}')
+    if isinstance(val, list):
+        return encode_array(val)
+
+    elif isinstance(val, bytes):
+        return val
+
+    elif isinstance(val, str):
+        if " " in val:
+            return encode_bulk_string(val)
+        else:
+            return encode_simple_string(val)
+    elif isinstance(val, int):
+        return encode_integer(val)
+
+    else:
+        raise RespError("Passed value is not a list, str or int.")
+
+print('parser version: 0.4, created 30.06.2026')
+# print(parser_first(b"$4\r\nPING\r\n"))
+# print(parser_first(b'+OK\r\n'))
+# print(parser_first(b"*2\r\n$4\r\nPING\r\n$4\r\nPONG\r\n"))

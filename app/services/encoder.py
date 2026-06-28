@@ -31,7 +31,9 @@ def encode_integer(n: int):
         raise ValueError("Passed value is not an integer.")
 
 def encode_bulk_string(val: str):
-    if isinstance(val, str) and len(val) >= 1:
+    if val is None:
+        return f"$-1\r\n".encode("utf-8")
+    elif isinstance(val, str) and len(val) >= 1:
         length = len(val)
         return f"${length}\r\n{val}\r\n".encode("utf-8")
     else:
@@ -51,6 +53,8 @@ def encode_simple_error(val:str):
 
 def encode(val: "RedisResponse"):
     if val.encoding == "*":
+        if val.value is None:
+            return f'*-1\r\n'.encode("utf-8")
         if len(val.value) > 1:
             for i in range(len(val.value)):
                 val.value[i] = encode(val.value[i])

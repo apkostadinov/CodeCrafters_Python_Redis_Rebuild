@@ -80,7 +80,7 @@ async def handle_exec(message, state, server):
     pass
 
 async def handle_get(message, state, server):
-    value = RedisResponse("-1", "$")
+    value = RedisResponse(None, "$")
     if message[1]:
         key = message[1]
     else:
@@ -96,7 +96,7 @@ async def handle_get(message, state, server):
         print(f'Value found: {value}')
         value = RedisResponse(value, "$")
     else:
-        value = RedisResponse("-1", "$")
+        value = RedisResponse(None, "$")
 
     return value
 
@@ -202,13 +202,13 @@ async def handle_lpop(message, state, server):
         try:
             count = int(message[2])
         except ValueError:
-            return RedisResponse("-1", "$")
+            return RedisResponse(None, "$")
 
     else:
         count = 1
 
     if key not in server.lists or len(server.lists[key]) == 0:
-        return RedisResponse("-1", "$")
+        return RedisResponse(None, "$")
 
     if count > 1:
         returnable = []
@@ -247,7 +247,7 @@ async def handle_blpop(message, state, server):
     except asyncio.TimeoutError:
         print(datetime.now()-timer)
         server.waiters["list"][key].remove(future)
-        return RedisResponse("-1", "*")
+        return RedisResponse(None, "*")
 
 async def handle_type(message, state, server):
     key = message[1]
@@ -400,7 +400,7 @@ async def handle_xread(message, state, server):
 
             except asyncio.TimeoutError:
                 server.waiters["stream"][key].remove(future)
-                return RedisResponse("-1", "*")
+                return RedisResponse(None, "*")
 
     else:
         raise RespError("Malformed command.")
@@ -410,4 +410,4 @@ async def handle_xread(message, state, server):
     if collection:
         return RedisResponse(collection, "*")
     else:
-        return RedisResponse("-1", "*")
+        return RedisResponse(None, "*")

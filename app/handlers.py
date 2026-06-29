@@ -6,6 +6,8 @@ from datetime import datetime, timedelta
 
 async def handle_ping(message,state):
     response = []
+    if message.count("PING")>1:
+        response = "PING"
     for _ in range(message.count("PING")):
         response.append("PONG")
 
@@ -19,15 +21,16 @@ async def handle_echo(message, state):
     for i in range(len(message)):
         if message[i].upper() == "ECHO" and message[i + 1]:
             print(message[i + 1])
-            response.append(parser.encode_bulk_string(message[i + 1]))
+            response.append(message[i + 1])
             print(f'Sent: {message[i + 1]}')
         else:
             break
 
     else:
-        response = b'+""\r\n'
+        return b'+""\r\n'
 
-    return response
+    return parser.encode_bulk_string(response)
+
 
 async def handle_set(message, state, server):
     # Extract the key and value to set
@@ -92,7 +95,7 @@ async def handle_get(message, state, server):
     if key in server.strings.keys():
         value = server.strings[key]
         print(f'Value found: {value}')
-        value = parser.encode(value)
+        value = parser.encode_bulk_string(value)
     else:
         value = b'$-1\r\n'
 
@@ -218,7 +221,10 @@ async def handle_lpop(message, state, server):
     elif count == 1:
         returnable = server.lists[key].pop(0)
 
-    return parser.encode(returnable)
+    if isinstance(returnable, str):
+        return parser.encode_bulk_string(returnable)
+    else:
+        return parser.encode(returnable)
 
 
 async def handle_blpop(message, state, server):

@@ -55,7 +55,7 @@ def encode(val: "RedisResponse"):
     if val.encoding == "*":
         if val.value is None:
             return f'*-1\r\n'.encode("utf-8")
-        if len(val.value) > 1 and val.encoding ==:
+        if len(val.value) > 1:
             for i in range(len(val.value)):
                 val.value[i] = encode(val.value[i])
         return encode_array(val.value)

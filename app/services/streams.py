@@ -1,5 +1,4 @@
 from copy import deepcopy
-from .classes import RedisResponse
 
 print(f"Importing {__name__}")
 
@@ -145,6 +144,6 @@ def xread_extraction(streams, pairs):
     listed = list()
 
     for key in collection:
-        listed.append(RedisResponse([key,collection[key]], "*"))
+        listed.append([key,collection[key]])
 
     return listed if len(listed)>0 else None

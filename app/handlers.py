@@ -63,7 +63,7 @@ async def handle_incr(message, state, server):
             value = int(server.strings[key]) + 1
             server.strings[key] = str(value)
         except Exception as e:
-            return RedisResponse("ERR value is not an integer or out of range", "simple_error")
+            return RedisResponse("ERR value is not an integer or out of range", "-")
     else:
         value = 1
         server.strings[key] = "1"

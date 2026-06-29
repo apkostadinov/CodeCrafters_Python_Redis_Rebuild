@@ -405,8 +405,6 @@ async def handle_xread(message, state, server):
     else:
         raise RespError("Malformed command.")
 
-    print(response)
-
     if collection:
         return RedisResponse(collection, "*")
     else:

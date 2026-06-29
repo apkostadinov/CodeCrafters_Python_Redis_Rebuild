@@ -6,31 +6,21 @@ from datetime import datetime, timedelta
 
 async def handle_ping(message,state):
     response = []
-    if message.count("PING")>1:
-        response = "PING"
-    for _ in range(message.count("PING")):
-        response.append("PONG")
+    if len(message) == 1:
+        return parser.encode_simple_string("PONG")
+    else:
+        for _ in range(message.count("PING")):
+            response.append("PONG")
 
     return parser.encode(response)
-
 
 async def handle_echo(message, state):
     # Extract the message to echo
     print(message)
-    response = []
-    for i in range(len(message)):
-        if message[i].upper() == "ECHO" and message[i + 1]:
-            print(message[i + 1])
-            response.append(message[i + 1])
-            print(f'Sent: {message[i + 1]}')
-        else:
-            break
-
+    if len(message) == 2:
+        return parser.encode_bulk_string(message[1])
     else:
         return b'+""\r\n'
-
-    return parser.encode_bulk_string(response)
-
 
 async def handle_set(message, state, server):
     # Extract the key and value to set

@@ -158,7 +158,7 @@ async def main():
     HOST = "localhost"
     PORT = 6379
 
-    if "--port" in sys.argv
+    if "--port" in sys.argv:
         if sys.argv.index("--port") + 1:
             PORT = sys.argv[sys.argv.index("--port") + 1]
         else:

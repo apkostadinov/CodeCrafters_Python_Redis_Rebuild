@@ -59,12 +59,8 @@ async def handle_command(message, state):
     command = message[0]
 
     if state.is_multi:
-        if command != "EXEC":
-            state.tx_queue.append(message)
-            print('Sent: "QUEUED"')
-            return parser.encode_simple_string("QUEUED")
 
-        elif command == "EXEC":
+        if command == "EXEC":
             state.is_multi = False
             if len(state.tx_queue) > 0:
                 response = []
@@ -77,9 +73,22 @@ async def handle_command(message, state):
             elif len(state.tx_queue) == 0:
                 return (b"*0\r\n")
 
+        elif command == "DISCARD":
+            state.is_multi = False
+            return parser.encode_simple_string("OK")
+
+        else:
+            state.tx_queue.append(message)
+            print('Sent: "QUEUED"')
+            return parser.encode_simple_string("QUEUED")
 
     if command == "EXEC":
         state.writer.write(b"-ERR EXEC without MULTI\r\n")
+        await state.writer.drain()
+        return
+
+    elif command == "DISCARD":
+        state.writer.write(b"-ERR DISCARD without MULTI\r\n")
         await state.writer.drain()
         return
 

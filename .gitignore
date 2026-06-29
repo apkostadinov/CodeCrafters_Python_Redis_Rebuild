@@ -176,6 +176,3 @@ cython_debug/
 # TODOs
 .todo
 /Echo_crash.todo
-
-#Local Backups
-.bak

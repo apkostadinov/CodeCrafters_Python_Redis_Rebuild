@@ -1,10 +1,12 @@
 import socket  # noqa: F401
 import asyncio
+import sys
 
 from app.handlers import *
 from app.state import *
 from app.services import parser
 from app.services.exceptions import *
+
 
 async def handle_client(reader, writer):
     state = ClientState(reader, writer)
@@ -153,8 +155,14 @@ async def handle_command(message, state):
 
 async def main():
 
-    server_process = await asyncio.start_server(handle_client, "localhost", 6379)
-    print("Server created at localhost:6379")
+    HOST = "localhost"
+    PORT = 6379
+
+    if "--port" in sys.argv:
+        PORT = sys.argv[sys.argv.index("--port") + 1]
+
+    server_process = await asyncio.start_server(handle_client, HOST, PORT)
+    print(f"Server created at {HOST}:{PORT}")
 
     async with server_process:
         await server_process.serve_forever()

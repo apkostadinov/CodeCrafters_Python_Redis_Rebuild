@@ -158,8 +158,11 @@ async def main():
     HOST = "localhost"
     PORT = 6379
 
-    if "--port" in sys.argv:
-        PORT = sys.argv[sys.argv.index("--port") + 1]
+    if "--port" in sys.argv
+        if sys.argv.index("--port") + 1:
+            PORT = sys.argv[sys.argv.index("--port") + 1]
+        else:
+            print(f'Port not specified, defaulting to {PORT}')
 
     server_process = await asyncio.start_server(handle_client, HOST, PORT)
     print(f"Server created at {HOST}:{PORT}")

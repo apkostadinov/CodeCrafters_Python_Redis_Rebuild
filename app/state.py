@@ -1,3 +1,5 @@
+from typing import Any
+
 class ClientState:
     def __init__(self, reader, writer):
         self.reader = reader
@@ -12,7 +14,7 @@ class ClientState:
 
 class ServerState:
 
-    def __init__(self):
+    def __init__(self, host=None, port=None, info: dict[dict[str, Any], Any] = None):
         self.strings = {}
         self.expirations = {}
         self.lists = {}
@@ -22,3 +24,20 @@ class ServerState:
             "list": {},
             "stream": {},
         }
+
+        self.host = host if host else "localhost"
+        self.port = port if port else "localhost"
+
+        self.info = info
+
+    @property
+    def info(self):
+        return self._info
+
+
+    @info.setter
+    def info(self, value):
+        if not value:
+            self._info = {"# Replication": {"role": "master"}}
+        else:
+            self._info = value

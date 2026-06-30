@@ -147,8 +147,13 @@ def encode_stream(values):
 
 
 
-def encode_array(values: list[str|int|list]):
+def encode_array(values: list[str|int|list] | dict[dict]):
     returnable = f'*{len(values)}\r\n'.encode("utf-8")
+    # if isinstance(values, dict):
+    #     for key in values.keys():
+    #         returnable += f"*2\r\n".encode("utf-8")
+    #         returnable += encode_bulk_string(key)
+    #         returnable += encode_array(values[key])
     for var in values:
         if isinstance(var, int):
             returnable += encode_integer(var)

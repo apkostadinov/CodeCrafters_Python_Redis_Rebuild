@@ -1,4 +1,5 @@
 import asyncio
+
 from app.services import parser
 from app.services.exceptions import *
 from app.services.streams import *
@@ -114,7 +115,7 @@ async def handle_rpush(message, state, server):
     return parser.encode(current_len if current_len else count_added)
 
 
-async def handle_lrange(message, state, server):
+async def handle_lrange(message, client, server):
     key = message[1]
     try:
         start = int(message[2])
@@ -409,4 +410,20 @@ async def handle_xread(message, state, server):
 
     print(response)
 
+    return response
+
+async def handle_info(message, server):
+    print(server.info)
+    response = []
+    for i in server.info.keys():
+        response.append(parser.encode_bulk_string(i))
+        secondary = []
+        for n in server.info[i].keys():
+            secondary.append(parser.encode_bulk_string(str(n) + ":" + str(server.info[i][n])))
+        response.append(secondary)
+
+    print(response)
+
+    response = parser.encode_array(response)
+    print(response)
     return response

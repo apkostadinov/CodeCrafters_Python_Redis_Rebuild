@@ -81,7 +81,8 @@ if __name__ == "__main__":
     # send_redis_command("INCR", "fruit")
     # send_redis_command("GET", "fruit")
 
-    send_redis_command_contd(["MULTI"],["SET", "fruit", "0"],["INCR", "fruit"],["INCR", "fruit"],["GET","fruit"],["EXEC"])
+    # send_redis_command_contd(["MULTI"],["SET", "fruit", "0"],["INCR", "fruit"],["INCR", "fruit"],["GET","fruit"],["EXEC"])
+    send_redis_command("INFO")
 
     # print(encode_command("MULTI"))
     # print(encode_command("SET", "fruit", "0"))

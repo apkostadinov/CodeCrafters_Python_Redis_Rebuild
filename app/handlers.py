@@ -416,10 +416,10 @@ async def handle_info(message, server):
     print(server.info)
     response = []
     for i in server.info.keys():
-        response.append(parser.encode_bulk_string(i))
+        response.append(i)
         secondary = []
         for n in server.info[i].keys():
-            secondary.append(parser.encode_bulk_string(str(n) + ":" + str(server.info[i][n])))
+            secondary.append(str(n) + ":" + str(server.info[i][n]))
         response.append(secondary)
 
     print(response)

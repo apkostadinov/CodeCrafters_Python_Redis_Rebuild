@@ -415,10 +415,14 @@ async def handle_xread(message, state, server):
 async def handle_info(message, server):
     print(server.info)
     response = []
-    for i in server.info.keys():
-        response.append(i)
-        for n in server.info[i].keys():
-            response.append(str(n) + ":" + str(server.info[i][n]))
+    if len(message) == 2:
+        for n in server.info[message[1]].keys():
+            response.append(str(n) + ":" + str(server.info[message[1]][n]))
+    else:
+        for i in server.info.keys():
+            response.append("# " + i.capitalize())
+            for n in server.info[i].keys():
+                response.append(str(n) + ":" + str(server.info[i][n]))
 
     print(response)
     response = " ".join(response)

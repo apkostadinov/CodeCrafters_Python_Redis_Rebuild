@@ -38,6 +38,6 @@ class ServerState:
     @info.setter
     def info(self, value):
         if not value:
-            self._info = {"# Replication": {"role": "master"}}
+            self._info = {"replication": {"role": "master"}}
         else:
             self._info = value

@@ -167,12 +167,19 @@ async def main():
 if __name__ == "__main__":
     HOST = "localhost"
     PORT = 6379
+    INFO = None
+    print(sys.argv)
     if "--port" in sys.argv:
         if sys.argv.index("--port") + 1:
             PORT = sys.argv[sys.argv.index("--port") + 1]
         else:
             print(f'Port not specified, defaulting to {PORT}')
+    if "--replicaof" in sys.argv:
+        INFO = {"Replication": {"role": "slave"}}
+        master_address = sys.argv[sys.argv.index("--replicaof") + 1]
 
-    server = ServerState(host=HOST, port=PORT)
+
+
+    server = ServerState(host=HOST, port=PORT, info=INFO)
     asyncio.run(main())
     #main()

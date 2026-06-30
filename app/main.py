@@ -175,7 +175,7 @@ if __name__ == "__main__":
         else:
             print(f'Port not specified, defaulting to {PORT}')
     if "--replicaof" in sys.argv:
-        INFO = {"Replication": {"role": "slave"}}
+        INFO = {"replication": {"role": "slave"}}
         master_address = sys.argv[sys.argv.index("--replicaof") + 1]
 
 

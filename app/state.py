@@ -26,7 +26,7 @@ class ServerState:
         }
 
         self.host = host if host else "localhost"
-        self.port = port if port else "localhost"
+        self.port = port if port else "6379"
 
         self.info = info
 

@@ -413,6 +413,7 @@ async def handle_xread(message, state, server):
     return response
 
 async def handle_info(message, server):
+    print("=-=-=-=-=-=-=-=")
     print(server.info)
     response = []
     if len(message) == 2:
@@ -424,9 +425,7 @@ async def handle_info(message, server):
             for n in server.info[i].keys():
                 response.append(str(n) + ":" + str(server.info[i][n]))
 
-    print(response)
     response = " ".join(response)
 
     response = parser.encode_bulk_string(response)
-    print(response)
     return response

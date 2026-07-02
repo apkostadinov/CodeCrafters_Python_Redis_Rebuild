@@ -34,7 +34,7 @@ async def handle_client(reader, writer):
 
             if data == b'':
                 # True disconnect — still break
-                print(f"Connection closed by client on address {address}")
+                #print(f"Connection closed by client on address {address}")
                 break
 
             try:
@@ -167,19 +167,29 @@ async def main():
 if __name__ == "__main__":
     HOST = "localhost"
     PORT = 6379
-    INFO = None
+
     print(sys.argv)
+
     if "--port" in sys.argv:
         if sys.argv.index("--port") + 1:
             PORT = sys.argv[sys.argv.index("--port") + 1]
         else:
             print(f'Port not specified, defaulting to {PORT}')
+
     if "--replicaof" in sys.argv:
-        INFO = {"replication": {"role": "slave"}}
-        master_address = sys.argv[sys.argv.index("--replicaof") + 1]
+        role = "slave"
+        master_id = sys.argv[sys.argv.index("--replicaof") + 1]
+    else:
+        role = None
+        master_id = None
 
 
 
-    server = ServerState(host=HOST, port=PORT, info=INFO)
+    server = ServerState(
+        host=HOST,
+        port=PORT,
+        role=role,
+        master_id=master_id)
+
     asyncio.run(main())
     #main()

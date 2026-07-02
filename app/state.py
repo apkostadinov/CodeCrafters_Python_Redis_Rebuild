@@ -83,4 +83,4 @@ class ServerState:
         self._info = {"replication": {
                         "role": f"{self.role}",
                         "master_replid" : f"{self.master_id}",
-                        "replication_offset": f"{self.offset}"}}
+                        "master_repl_offset": f"{self.offset}"}}

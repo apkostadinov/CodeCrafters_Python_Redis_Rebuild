@@ -1,4 +1,4 @@
-import socket  # noqa: F401
+import socket
 import asyncio
 import sys
 
@@ -155,41 +155,42 @@ async def handle_command(message, client):
     return response
     print('----------------')
 
-async def main():
+async def main(server):
 
-    server_process = await asyncio.start_server(handle_client, HOST, PORT)
-    print(f"Server created at {HOST}:{PORT}")
+    server_process = await asyncio.start_server(handle_client, server.host, server.port)
+    print(f"Server created at {server.host}:{server.port}")
 
     async with server_process:
         await server_process.serve_forever()
 
 
-if __name__ == "__main__":
-    HOST = "localhost"
-    PORT = 6379
-
-    print(sys.argv)
-
-    if "--port" in sys.argv:
-        if sys.argv.index("--port") + 1:
-            PORT = sys.argv[sys.argv.index("--port") + 1]
+def server_setup(host, port, sys_vars):
+    print(sys_vars)
+    if "--port" in sys_vars:
+        if sys_vars.index("--port") + 1:
+            port = sys_vars[sys_vars.index("--port") + 1]
         else:
-            print(f'Port not specified, defaulting to {PORT}')
+            print(f'Port not specified, defaulting to {port}')
 
-    if "--replicaof" in sys.argv:
+    if "--replicaof" in sys_vars:
         role = "slave"
-        master_id = sys.argv[sys.argv.index("--replicaof") + 1]
+        master_id = sys_vars[sys_vars.index("--replicaof") + 1]
     else:
         role = None
         master_id = None
 
-
-
     server = ServerState(
-        host=HOST,
-        port=PORT,
+        host=host,
+        port=port,
         role=role,
         master_id=master_id)
 
-    asyncio.run(main())
+    return server
+
+if __name__ == "__main__":
+    HOST = "localhost"
+    PORT = 6379
+
+    server = server_setup(HOST, PORT, sys.argv)
+    asyncio.run(main(server))
     #main()

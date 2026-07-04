@@ -32,8 +32,6 @@ class ServerState:
         self.role = role
         self.master_id = master_id if master_id else generate_master_id()
         self.offset = offset
-        self.info = {}
-
 
 
     @property
@@ -76,11 +74,7 @@ class ServerState:
 
     @property
     def info(self):
-        return self._info
-
-    @info.setter
-    def info(self, value):
-        self._info = {"replication": {
+        return {"replication": {
                         "role": f"{self.role}",
                         "master_replid" : f"{self.master_id}",
                         "master_repl_offset": f"{self.offset}"}}

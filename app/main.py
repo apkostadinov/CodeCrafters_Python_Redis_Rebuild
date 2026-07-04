@@ -155,10 +155,27 @@ async def handle_command(message, client):
     return response
     print('----------------')
 
+async def replica_loop():
+    master_id = sys.argv[sys.argv.index("--replicaof") + 1]
+    master_host, master_port = master_id.split(" ")
+    reader, writer = await asyncio.open_connection(
+        master_host,
+        master_port,
+    )
+
+    writer.write(parser.encode(["PING"]))
+    await writer.drain()
+
+    data = await reader.read(1024)
+    print(data)
+
 async def main(server):
 
     server_process = await asyncio.start_server(handle_client, server.host, server.port)
     print(f"Server created at {server.host}:{server.port}")
+
+    if server.role == "slave":
+        asyncio.create_task(replica_loop())
 
     async with server_process:
         await server_process.serve_forever()
@@ -174,7 +191,8 @@ def server_setup(host, port, sys_vars):
 
     if "--replicaof" in sys_vars:
         role = "slave"
-        master_id = sys_vars[sys_vars.index("--replicaof") + 1]
+        master_id = sys.argv[sys.argv.index("--replicaof") + 1]
+
     else:
         role = None
         master_id = None

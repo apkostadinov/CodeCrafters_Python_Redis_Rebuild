@@ -14,4 +14,4 @@ set -e # Exit early if any commands fail
 # - Edit .codecrafters/run.sh to change how your program runs remotely
 
 exec pipenv run python3 -m app.main "$@"
-# exec pipenv run python3 -m pdb -m app.main "$@" --port 6380 --replicaof "localhost 6379"
+#exec pipenv run python3 -m pdb -m app.main "$@"

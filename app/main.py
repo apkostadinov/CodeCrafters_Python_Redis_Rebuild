@@ -169,6 +169,26 @@ async def replica_loop():
     data = await reader.read(1024)
     print(data)
 
+    if parser.parse_simple_string(data) == "PONG":
+        writer.write(parser.encode(["REPLCONF", "listening-port",server.listening_port]))
+
+    data = await reader.read(1024)
+    print(data)
+
+    if parser.parse_simple_string(data) == "OK":
+        writer.write(parser.encode(["REPLCONF", "capa", "psync2"]))
+
+    else:
+        raise RespError(f"Master Server responded {data}")
+
+    data = await reader.read(1024)
+    print(data)
+
+    if parser.parse_simple_string(data) == "OK":
+        pass
+    else:
+        raise RespError(f"Master Server responded {data}")
+
 async def main(server):
 
     server_process = await asyncio.start_server(handle_client, server.host, server.port)

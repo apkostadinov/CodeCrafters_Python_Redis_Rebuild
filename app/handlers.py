@@ -5,6 +5,7 @@ from app.services.exceptions import *
 from app.services.streams import *
 from datetime import datetime, timedelta
 
+
 async def handle_ping(message,state):
     response = []
     if len(message) == 1:
@@ -426,3 +427,49 @@ async def handle_info(message, server):
     response = " ".join(response)
     response = parser.encode_bulk_string(response)
     return response
+
+async def handle_replconf(message, server, client):
+    if message[1] != "listening-port":
+        raise RespError("Malformed command. <listening-port> missing")
+
+    if not isinstance(message[2], (int,str)):
+        raise RespError("Malformed command. Port is not integer")
+
+    address = client.writer.get_extra_info("peername")
+    port = message[2]
+
+    client.writer.write(parser.encode_simple_string("OK"))
+    await client.writer.drain()
+
+    data = await client.reader.read(100)
+
+    new_message, _ = parser.parser(data, 0)
+
+    if new_message[0] != "REPLCONF":
+        raise RespError("Malformed command. <REPLCONF> missing")
+
+    if new_message[1] != "capa":
+        raise RespError("Malformed command. <capa> missing")
+
+    if new_message[2] != "psync2":
+        raise RespError("Malformed command. Capabilities unknown.")
+
+    server.slaved_servers[address] = port
+
+    client.writer.write(parser.encode_simple_string("OK"))
+    await client.writer.drain()
+
+    data = await client.reader.read(100)
+
+    new_message, _ = parser.parser(data, 0)
+
+    if new_message[0] != "PSYNC":
+        raise RespError("Malformed command. PSYNC failed.")
+
+    repl_id = "hardcoded"
+
+    client.writer.write(parser.encode_simple_string(f"FULLRESYNC {repl_id} 0"))
+
+    print(f"Server with address:{address}:{port} added as slave.")
+
+    return parser.encode_simple_string("OK")

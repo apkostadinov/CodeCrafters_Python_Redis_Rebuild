@@ -33,6 +33,9 @@ class ServerState:
         self.master_id = master_id if master_id else generate_master_id()
         self.offset = offset
 
+        self.slaved_servers = {}
+        self.repl_id = None
+
 
     @property
     def role(self):
@@ -51,7 +54,6 @@ class ServerState:
     def master_id(self):
         return self._master_id
 
-
     @master_id.setter
     def master_id(self, value):
         if self.role == "master":
@@ -62,6 +64,7 @@ class ServerState:
     @property
     def offset(self):
         return self._offset
+
     @offset.setter
     def offset(self, value=None):
         if value and not isinstance(value, int):

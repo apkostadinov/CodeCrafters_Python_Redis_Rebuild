@@ -149,6 +149,9 @@ async def handle_command(message, client):
         case "INFO":
             response = await handle_info(message, server)
 
+        case "REPLCONF":
+            response = await handle_replconf(message, server, client)
+
         case _:
             raise RespError("Unknown command returns -ERR")
 
@@ -157,7 +160,7 @@ async def handle_command(message, client):
 
 async def replica_loop():
     master_id = sys.argv[sys.argv.index("--replicaof") + 1]
-    master_host, master_port = master_id.split(" ")
+    master_host, master_port = "localhost", master_id
     reader, writer = await asyncio.open_connection(
         master_host,
         master_port,
@@ -167,25 +170,41 @@ async def replica_loop():
     await writer.drain()
 
     data = await reader.read(1024)
-    print(data)
+    print(data,"decoded: " ,parser.parse_simple_string(data, 0))
 
-    if parser.parse_simple_string(data) == "PONG":
-        writer.write(parser.encode(["REPLCONF", "listening-port",server.listening_port]))
+    if parser.parse_simple_string(data, 0)[0] == "PONG":
+        writer.write(parser.encode(["REPLCONF", "listening-port",server.port]))
+    else:
+        print(f'Server did not respond with PONG')
+        return
 
     data = await reader.read(1024)
     print(data)
 
-    if parser.parse_simple_string(data) == "OK":
+    if parser.parse_simple_string(data, 0)[0] == "OK":
         writer.write(parser.encode(["REPLCONF", "capa", "psync2"]))
 
     else:
-        raise RespError(f"Master Server responded {data}")
+        raise RespError(f"Master Server responded {data} instead of OK")
 
     data = await reader.read(1024)
     print(data)
 
-    if parser.parse_simple_string(data) == "OK":
-        pass
+    if parser.parse_simple_string(data, 0)[0] == "OK":
+        writer.write(parser.encode(["PSYNC","?","-1"]))
+
+    else:
+        raise RespError(f"Master Server responded {data} instead of OK")
+
+    data = await reader.read(1024)
+    print(data)
+
+    new_message = parser.parse_simple_string(data, 0)[0].split(" ")
+    print(new_message)
+    if  new_message[0]== "FULLRESYNC":
+        server.repl_id = new_message[1]
+        server.offset = int(new_message[2])
+        print(f"Handshake with master complete.")
     else:
         raise RespError(f"Master Server responded {data}")
 

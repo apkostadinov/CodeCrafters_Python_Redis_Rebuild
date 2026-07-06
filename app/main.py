@@ -160,7 +160,7 @@ async def handle_command(message, client):
 
 async def replica_loop():
     master_id = sys.argv[sys.argv.index("--replicaof") + 1]
-    master_host, master_port = "localhost", master_id
+    master_host, master_port = master_id.split(' ')
     reader, writer = await asyncio.open_connection(
         master_host,
         master_port,

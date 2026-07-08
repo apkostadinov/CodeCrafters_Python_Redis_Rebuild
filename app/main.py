@@ -29,8 +29,11 @@ async def handle_client(reader, writer):
                 buffer = buffer[consumed:]
                 response = await handle_command(message, client)
                 print(response)
-                client.writer.write(response)
-                await writer.drain()
+                if response is not None:
+                    client.writer.write(response)
+                    await writer.drain()
+                else:
+                    pass
 
             if data == b'':
                 # True disconnect — still break
@@ -207,9 +210,11 @@ async def replica_loop():
     if  new_message[0]== "FULLRESYNC":
         server.master_id = new_message[1]
         server.offset = int(new_message[2])
+        rdb_file = await reader.read(1024)
         print(f"Handshake with master complete.")
         print(f"Slaved to {master_host}:{master_port}\n"
               f"with master_id {server.master_id}")
+        print(rdb_file)
     else:
         raise RespError(f"Master Server responded {data}")
 

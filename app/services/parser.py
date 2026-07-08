@@ -211,6 +211,13 @@ def encode(val: [int, str, list, bytes]):
     else:
         raise RespError("Passed value is not a list, str or int.")
 
+def encode_rdb(val: str):
+    if isinstance(val, str) and len(val) >= 1:
+        length = len(val)
+        return f"${length}\r\n{val}".encode("utf-8")
+    else:
+        raise ValueError("Passed value is not a string.")
+
 print('parser version: 0.3, created 26.10.2025')
 # print(parser_first(b"$4\r\nPING\r\n"))
 # print(parser_first(b'+OK\r\n'))

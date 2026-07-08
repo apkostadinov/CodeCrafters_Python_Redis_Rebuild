@@ -152,6 +152,9 @@ async def handle_command(message, client):
         case "REPLCONF":
             response = await handle_replconf(message, server, client)
 
+        case "FULLRESYNC":
+            response = await handle_fullresync(message, server, client)
+
         case _:
             raise RespError("Unknown command returns -ERR")
 
@@ -159,8 +162,8 @@ async def handle_command(message, client):
     print('----------------')
 
 async def replica_loop():
-    master_id = sys.argv[sys.argv.index("--replicaof") + 1]
-    master_host, master_port = master_id.split(' ')
+    master_address = sys.argv[sys.argv.index("--replicaof") + 1]
+    master_host, master_port = master_address.split(' ')
     reader, writer = await asyncio.open_connection(
         master_host,
         master_port,
@@ -202,9 +205,11 @@ async def replica_loop():
     new_message = parser.parse_simple_string(data, 0)[0].split(" ")
     print(new_message)
     if  new_message[0]== "FULLRESYNC":
-        server.repl_id = new_message[1]
+        server.master_id = new_message[1]
         server.offset = int(new_message[2])
         print(f"Handshake with master complete.")
+        print(f"Slaved to {master_host}:{master_port}\n"
+              f"with master_id {server.master_id}")
     else:
         raise RespError(f"Master Server responded {data}")
 

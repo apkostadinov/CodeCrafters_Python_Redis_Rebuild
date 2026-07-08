@@ -466,7 +466,7 @@ async def handle_replconf(message, server, client):
     if new_message[0] != "PSYNC":
         raise RespError("Malformed command. PSYNC failed.")
 
-    repl_id = "hardcoded"
+    repl_id = server.repl_id
 
     client.writer.write(parser.encode_simple_string(f"FULLRESYNC {repl_id} 0"))
 

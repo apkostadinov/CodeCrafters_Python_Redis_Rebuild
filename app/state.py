@@ -30,11 +30,11 @@ class ServerState:
         self.port = port if port else "6379"
 
         self.role = role
-        self.master_id = master_id if master_id else generate_master_id()
+        self.repl_id = generate_master_id()
         self.offset = offset
 
         self.slaved_servers = {}
-        self.repl_id = None
+        self.master_id = master_id if master_id else None
 
 
     @property

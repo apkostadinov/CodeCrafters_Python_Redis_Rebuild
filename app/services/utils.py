@@ -9,4 +9,4 @@ def generate_master_id(length=40):
 def generate_empty_rdb():
     return b64decode(b"UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog==")
 
-print(type(generate_empty_rdb()))
+print(generate_empty_rdb())

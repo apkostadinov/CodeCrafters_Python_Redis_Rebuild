@@ -212,7 +212,9 @@ def encode(val: [int, str, list, bytes]):
         raise RespError("Passed value is not a list, str or int.")
 
 def encode_rdb(val: str):
-    if isinstance(val, str) and len(val) >= 1:
+    print(type(val))
+    if isinstance(val, bytes):
+    #if isinstance(val, bytes) and len(val) >= 1:
         length = len(val)
         return f"${length}\r\n{val}".encode("utf-8")
     else:

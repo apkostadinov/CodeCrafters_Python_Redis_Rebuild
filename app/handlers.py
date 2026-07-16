@@ -1,10 +1,12 @@
 import asyncio
+from datetime import datetime, timedelta
 
 from app.services import parser
 from app.services.exceptions import *
 from app.services.streams import *
 from app.services.utils import generate_empty_rdb
-from datetime import datetime, timedelta
+from app.state import *
+
 
 async def handle_ping(message,state):
     response = []
@@ -42,8 +44,7 @@ async def handle_set(message, state, server):
             raise RespError("Invalid time format for SET command")
 
     response = b'+OK\r\n'
-    print(f'SET - Key: {message[1]} Value: {server.strings[message[1]]}\n'
-          f'Sent: {response}')
+    print(f'SET - Key: {message[1]} Value: {server.strings[message[1]]}')
     return response
 
 async def handle_incr(message, state, server):
@@ -454,7 +455,6 @@ async def handle_replconf(message, server, client):
     if new_message[2] != "psync2":
         raise RespError("Malformed command. Capabilities unknown.")
 
-    server.slaved_servers[address] = port
 
     client.writer.write(parser.encode_simple_string("OK"))
     await client.writer.drain()
@@ -474,7 +474,11 @@ async def handle_replconf(message, server, client):
     client.writer.write(parser.encode_rdb(generate_empty_rdb()))
     await client.writer.drain()
 
-    print(f"Server with address:{address}:{port} added as slave.")
+    slave = SlavedServer(address[0], address[1], client.reader, client.writer)
 
-    return None
+    server.slaves.append(slave)
+
+    print(f"Server with address:{address[0]}:{address[1]} added as slave.")
+
+    return
     return parser.encode_simple_string("OK")

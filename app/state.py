@@ -13,7 +13,29 @@ class ClientState:
         self.blocked_future = None
         self.replication_offset = 0
 
-class ServerState:
+class Server:
+    @property
+    def offset(self):
+        return self._offset
+
+    @offset.setter
+    def offset(self, value=None):
+        if value and not isinstance(value, int):
+            raise ValueError("Invalid offset value")
+
+        if value:
+            self._offset = value
+        else:
+            self._offset = 0
+
+    @property
+    def info(self):
+        return {"replication": {
+            "role": f"{self.role}",
+            "master_replid": f"{self.master_id}",
+            "master_repl_offset": f"{self.offset}"}}
+
+class ServerState(Server):
 
     def __init__(self, host=None, port=None, role=None, master_id=None, offset=None):
         self.strings = {}
@@ -33,9 +55,13 @@ class ServerState:
         self.repl_id = generate_master_id()
         self.offset = offset
 
-        self.slaved_servers = {}
+        self.slaves = []
         self.master_id = master_id if master_id else None
 
+        self.master_host = None
+        self.master_port = None
+        self.master_reader = None
+        self.master_writer = None
 
     @property
     def role(self):
@@ -56,10 +82,10 @@ class ServerState:
 
     @master_id.setter
     def master_id(self, value):
-        if self.role == "master":
-            self._master_id = generate_master_id()
-        else:
+        if self.role == "slave":
             self._master_id = value
+        else:
+            self._master_id = None
 
     @property
     def offset(self):
@@ -75,9 +101,12 @@ class ServerState:
         else:
             self._offset = 0
 
-    @property
-    def info(self):
-        return {"replication": {
-                        "role": f"{self.role}",
-                        "master_replid" : f"{self.master_id}",
-                        "master_repl_offset": f"{self.offset}"}}
+class SlavedServer(Server):
+    def __init__(self, host, port, reader, writer):
+        self.host= host
+        self.port = port
+        self.reader = reader
+        self.writer = writer
+
+    def __repr__(self):
+        return f"SlavedServer(address={self.address}, port={self.port})"

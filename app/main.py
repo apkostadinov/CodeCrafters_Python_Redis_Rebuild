@@ -18,6 +18,7 @@ async def handle_client(reader, writer):
         while True:
             data = await reader.read(1024)
             buffer += data
+
             while True:
                 try:
                     message, consumed = parser.parser(buffer, 0)
@@ -25,6 +26,13 @@ async def handle_client(reader, writer):
                           f'Decoded: {message}')
                 except parser.IncompleteMessage:
                     break
+
+                if message[0] in ["SET", "INCR"]:
+                    for slave in server.slaves:
+                        print(f"Sending {data} to {slave.host}:{slave.port}")
+                        slave.writer.write(data)
+                        await slave.writer.drain()
+
 
                 buffer = buffer[consumed:]
                 response = await handle_command(message, client)
@@ -210,6 +218,10 @@ async def replica_loop():
     if  new_message[0]== "FULLRESYNC":
         server.master_id = new_message[1]
         server.offset = int(new_message[2])
+        server.master_host = master_host
+        server.master_port = master_port
+        server.master_reader = reader
+        server.master_writer = writer
         rdb_file = await reader.read(1024)
         print(f"Handshake with master complete.")
         print(f"Slaved to {master_host}:{master_port}\n"
@@ -218,13 +230,58 @@ async def replica_loop():
     else:
         raise RespError(f"Master Server responded {data}")
 
+    buffer = b''
+
+    master = ClientState(reader, writer)
+
+    try:
+        while True:
+            data = await master.reader.read(1024)
+            buffer += data
+
+            if data == b'':
+                # True disconnect — still break
+                # print(f"Connection closed by client on address {address}")
+                break
+
+            while True:
+                try:
+                    message, consumed = parser.parser(buffer, 0)
+                    print(f'Received: {data} from {master_host}:{master_port}\n'
+                          f'Decoded: {message}')
+                except parser.IncompleteMessage:
+                    break
+
+                # if message[0] in ["SET", "INCR"]:
+                #     for slave in server.slaves:
+                #         print(f"Sending {data} to {slave.host}:{slave.port}")
+                #         slave.writer.write(data)
+                #         await slave.writer.drain()
+
+                buffer = buffer[consumed:]
+                response = await handle_command(message, master)
+                print(response)
+
+            try:
+                # parse the RESP message
+                message = parser.parser_first(data, 0)
+            except RespError as e:
+                print(f"Parser error from {address}: {e}")
+                # Optionally send an error to the client
+                master.writer.write(b"-ERR invalid message\r\n")
+                await master.writer.drain()
+                continue  # keep connection alive
+
+    except ConnectionResetError:
+        print(f'Connection forcibly closed by {address}')
+
 async def main(server):
+
+    if server.role == "slave":
+        await replica_loop()
 
     server_process = await asyncio.start_server(handle_client, server.host, server.port)
     print(f"Server created at {server.host}:{server.port}")
-
-    if server.role == "slave":
-        asyncio.create_task(replica_loop())
 
     async with server_process:
         await server_process.serve_forever()

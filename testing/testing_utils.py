@@ -16,16 +16,16 @@ def encode_command(*parts: str) -> bytes:
             out += f':{payload}\r\n'.encode("utf-8")
     return out
 
-def send_redis_command(*parts: str):
+def send_redis_command(*parts: str, port=PORT):
     resp = encode_command(*parts)
-    with socket.create_connection((HOST, PORT)) as sock:
+    with socket.create_connection((HOST, port)) as sock:
         print(f"Sending: {resp}")
         sock.sendall(resp)
         data = sock.recv(1024)
         print(f"Received raw: {data}")
         #print(f"Received: {data} -> {parser.parser_first(data)}")
 
-def send_redis_command_contd(*parts: str):
+def send_redis_command_contd(*parts: str, port=PORT):
 
     with socket.create_connection((HOST, PORT)) as sock:
         for item in parts:

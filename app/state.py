@@ -37,7 +37,7 @@ class Server:
 
 class ServerState(Server):
 
-    def __init__(self, host=None, port=None, role=None, master_id=None, offset=None):
+    def __init__(self, host=None, port=None, role=None, master_id=None, offset=None, master_host=None, master_port=None):
         self.strings = {}
         self.expirations = {}
         self.lists = {}
@@ -57,11 +57,10 @@ class ServerState(Server):
 
         self.slaves = []
         self.master_id = master_id if master_id else None
+        self.master: ClientState = None
 
-        self.master_host = None
-        self.master_port = None
-        self.master_reader = None
-        self.master_writer = None
+        self.master_host = master_host
+        self.master_port = master_port
 
     @property
     def role(self):

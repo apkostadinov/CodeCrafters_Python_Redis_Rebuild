@@ -116,7 +116,6 @@ async def handle_rpush(message, state, server):
 
     return parser.encode(current_len if current_len else count_added)
 
-
 async def handle_lrange(message, client, server):
     key = message[1]
     try:

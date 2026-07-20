@@ -223,3 +223,6 @@ print('parser version: 0.3, created 26.10.2025')
 # print(parser_first(b"$4\r\nPING\r\n"))
 # print(parser_first(b'+OK\r\n'))
 # print(parser_first(b"*2\r\n$4\r\nPING\r\n$4\r\nPONG\r\n"))
+
+#print(parser_first(b'*3\r\n$3\r\nSET\r\n$3\r\nfoo\r\n$3\r\n123\r\n*3\r\n$3\r\nSET\r\n$3\r\nbar\r\n$3\r\n456\r\n*3\r\n$3\r\nSET\r\n$3\r\nbaz\r\n$3\r\n789\r\n', 0))
+#print(parser_first(b'$88\r\nREDIS0011\xfa\tredis-ver\x057.2.0\xfa\nredis-bits\xc0@\xfa\x05ctime\xc2m\x08\xbce\xfa\x08used-mem\xc2\xb0\xc4\x10\x00\xfa\x08aof-base\xc0\x00\xff\xf0n;\xfe\xc0\xffZ\xa2*3\r\n', 0))

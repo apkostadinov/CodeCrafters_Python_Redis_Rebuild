@@ -27,7 +27,7 @@ def send_redis_command(*parts: str, port=PORT):
 
 def send_redis_command_contd(*parts: str, port=PORT):
 
-    with socket.create_connection((HOST, PORT)) as sock:
+    with socket.create_connection((HOST, port)) as sock:
         for item in parts:
             message = encode_command(*item)
             print(f"Sending: {message}")

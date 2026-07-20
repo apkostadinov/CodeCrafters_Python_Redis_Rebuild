@@ -1,6 +1,7 @@
 import socket
 import asyncio
 import sys
+import argparse
 
 from app.handlers import *
 from app.state import *
@@ -211,7 +212,7 @@ async def replica_loop():
         raise RespError(f"Master Server responded {data} instead of OK")
 
     data = await reader.read(1024)
-    print(data)
+    print(f"data is:{data}")
 
     new_message = parser.parse_simple_string(data, 0)[0].split(" ")
     print(new_message)
@@ -222,11 +223,10 @@ async def replica_loop():
         print(f"Handshake with master complete.")
         print(f"Slaved to {master_host}:{master_port}\n"
               f"with master_id {server.master_id}")
-        print(rdb_file)
+        print(f"rdb file: {rdb_file}")
         server.master = ClientState(reader, writer)
     else:
         raise RespError(f"Master Server responded {data}")
-
 
 
     buffer = b''
@@ -240,8 +240,8 @@ async def replica_loop():
                 # True disconnect — still break
                 # print(f"Connection closed by client on address {address}")
                 break
-
-            while True:
+            print(buffer)
+            while len(buffer)>0:
                 try:
                     message, consumed = parser.parser(buffer, 0)
                     print(f'Received: {data} from {master_host}:{master_port}\n'
@@ -253,6 +253,7 @@ async def replica_loop():
                 response = await handle_command(message, server.master)
                 print(response)
                 server.offset += 1
+                print(buffer)
 
     except ConnectionResetError:
         print(f'Connection forcibly closed by {address}')
@@ -266,44 +267,79 @@ async def main(server):
     server_process = await asyncio.start_server(handle_client, server.host, server.port)
     print(f"Server created at {server.host}:{server.port}")
 
+    print(server.host, server.port)
+
     async with server_process:
         await server_process.serve_forever()
 
 
-def server_setup(host, port, sys_vars):
-    print(sys_vars)
-    if "--port" in sys_vars:
-        if sys_vars.index("--port") + 1:
-            port = sys_vars[sys_vars.index("--port") + 1]
-        else:
-            print(f'Port not specified, defaulting to {port}')
+# def server_setup(host, port, sys_vars):
+#     print(sys_vars)
+#     if "--port" in sys_vars:
+#         if sys_vars.index("--port") + 1:
+#             port = sys_vars[sys_vars.index("--port") + 1]
+#         else:
+#             print(f'Port not specified, defaulting to {port}')
+#
+#     if "--replicaof" in sys_vars:
+#         role = "slave"
+#         master_address = sys_vars[sys_vars.index("--replicaof") + 1]
+#         master_host, master_port = master_address.split(" ")
+#
+#
+#     else:
+#         role = "master"
+#         master_host, master_port= None, None
+#
+#     print(f"server is slave to {master_host}:{master_port}")
+#
+#     server = ServerState(
+#         host=host,
+#         port=port,
+#         role=role,
+#         master_host = master_host,
+#         master_port = master_port
+#     )
+#
+#     return server
 
-    if "--replicaof" in sys_vars:
+def server_setup():
+
+
+    print("RAW ARGV:")
+    print(sys.argv)
+
+    arg_parser = argparse.ArgumentParser()
+    arg_parser.add_argument("--port", type=int, default=6379)
+    arg_parser.add_argument("--replicaof")
+
+
+    args, unknown = arg_parser.parse_known_args()
+
+    print("PARSED:")
+    print(args)
+    print("UNKNOWN:")
+    print(unknown)
+
+    if args.replicaof:
         role = "slave"
-        master_address = sys_vars[sys_vars.index("--replicaof") + 1]
-        master_host, master_port = master_address.split(" ")
-
-
+        master_host, master_port = args.replicaof.split(" ")
     else:
         role = "master"
-        master_host, master_port= None, None
+        master_host = None
+        master_port = None
 
-    print(f"server is slave to {master_host}:{master_port}")
-
-    server = ServerState(
-        host=host,
-        port=port,
+    return ServerState(
+        port=args.port,
         role=role,
-        master_host = master_host,
-        master_port = master_port
+        master_host=master_host,
+        master_port=master_port,
     )
-
-    return server
 
 if __name__ == "__main__":
     HOST = "localhost"
     PORT = 6379
 
-    server = server_setup(HOST, PORT, sys.argv)
+    server = server_setup()
     asyncio.run(main(server))
     #main()

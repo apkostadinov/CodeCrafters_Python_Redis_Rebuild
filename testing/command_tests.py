@@ -4,10 +4,10 @@ from testing_utils import *
 
 if __name__ == "__main__":
     # print(parser.parser_first(b'*3\r\n$3\r\nSET\r\n$9\r\nblueberry\r\n$9\r\nraspberry\r\n'))
-    send_redis_command("PING")
-    send_redis_command("PING", "PING")
-    send_redis_command("INFO", port=6379)
-    send_redis_command("ECHO", "hello")
+    # send_redis_command("PING")
+    # send_redis_command("PING", "PING")
+    # send_redis_command("INFO", port=6379)
+    # send_redis_command("ECHO", "hello")
     send_redis_command("SET", "fruit", "apple")
     send_redis_command("SET", "fruit", "grape")
     send_redis_command("SET", "fruit", "orange")
@@ -83,12 +83,17 @@ if __name__ == "__main__":
     # send_redis_command("SET", "fruit", "xyz")
     # send_redis_command("INCR", "fruit")
     # send_redis_command("GET", "fruit")
-
+    #
     # send_redis_command_contd(["MULTI"],["SET", "fruit", "0"],["INCR", "fruit"],["INCR", "fruit"],["GET","fruit"],["EXEC"])
-    send_redis_command("INFO", port = 6380)
+    # send_redis_command_contd(["SET", "fruit", "0"],["INCR", "fruit"],["INCR", "fruit"],["GET","fruit"], port=6380)
+    # send_redis_command("INFO", port = 6380)
     send_redis_command("GET", "fruit", port = 6380)
-    # send_redis_command("INFO", "replication")
+    send_redis_command("GET", "foo", port = 6380)
+    send_redis_command("GET", "bar", port = 6380)
+    send_redis_command("GET", "baz", port = 6380)
 
+    # send_redis_command("INFO", "replication")
+    #
     # print(encode_command("MULTI"))
     # print(encode_command("SET", "fruit", "0"))
     # print(encode_command("INCR", "fruit"))

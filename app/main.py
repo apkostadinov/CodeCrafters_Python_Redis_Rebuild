@@ -219,11 +219,11 @@ async def replica_loop():
     if  new_message[0]== "FULLRESYNC":
         server.master_id = new_message[1]
         server.offset = int(new_message[2])
-        rdb_file = await reader.read(1024)
+        # rdb_file = await reader.read(1024)
         print(f"Handshake with master complete.")
         print(f"Slaved to {master_host}:{master_port}\n"
               f"with master_id {server.master_id}")
-        print(f"rdb file: {rdb_file}")
+        # print(f"rdb file: {rdb_file}")
         server.master = ClientState(reader, writer)
     else:
         raise RespError(f"Master Server responded {data}")
@@ -273,38 +273,7 @@ async def main(server):
         await server_process.serve_forever()
 
 
-# def server_setup(host, port, sys_vars):
-#     print(sys_vars)
-#     if "--port" in sys_vars:
-#         if sys_vars.index("--port") + 1:
-#             port = sys_vars[sys_vars.index("--port") + 1]
-#         else:
-#             print(f'Port not specified, defaulting to {port}')
-#
-#     if "--replicaof" in sys_vars:
-#         role = "slave"
-#         master_address = sys_vars[sys_vars.index("--replicaof") + 1]
-#         master_host, master_port = master_address.split(" ")
-#
-#
-#     else:
-#         role = "master"
-#         master_host, master_port= None, None
-#
-#     print(f"server is slave to {master_host}:{master_port}")
-#
-#     server = ServerState(
-#         host=host,
-#         port=port,
-#         role=role,
-#         master_host = master_host,
-#         master_port = master_port
-#     )
-#
-#     return server
-
 def server_setup():
-
 
     print("RAW ARGV:")
     print(sys.argv)

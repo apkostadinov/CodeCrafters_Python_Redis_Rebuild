@@ -188,7 +188,7 @@ async def replica_loop():
     print(data,"decoded: " ,parser.parse_simple_string(data, 0))
 
     if parser.parse_simple_string(data, 0)[0] == "PONG":
-        writer.write(parser.encode(["REPLCONF", "listening-port",server.port]))
+        writer.write(parser.encode(["REPLCONF", "listening-port",str(server.port)]))
     else:
         print(f'Server did not respond with PONG')
         return
